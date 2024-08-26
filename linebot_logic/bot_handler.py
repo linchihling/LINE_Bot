@@ -79,7 +79,7 @@ def get_image(machine_name, event):
         # latest_directory_url = latest_directory_url + current_hour + "/"
         latest_images = fetch_latest_png_images(latest_directory_url, max_images=5)
         logger.info(f"User: {client_id}, Image URLs: {latest_images}")
-        reply_message = [[ImageMessage(original_content_url=img_url, preview_image_url=img_url)] for img_url in latest_images]
+        reply_message = [ImageMessage(original_content_url=img_url, preview_image_url=img_url) for img_url in latest_images]
             
     elif message.startswith(machine_name + "影像"):
         directory_url = url + message.split(":")[-1]
@@ -216,7 +216,7 @@ def show_img(message, token, client_id):
 
     specify_url = url + message.split(":")[-1]
     logger.info(f"User: {client_id}, Directory URL: {specify_url}")
-    image_message = message_reply(specify_url)
+    image_message = [ImageMessage(original_content_url=img_url, preview_image_url=img_url)]
 
     return ReplyMessageRequest(reply_token=token, messages=image_message)
 
