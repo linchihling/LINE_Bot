@@ -1,4 +1,3 @@
-import logging
 import traceback
 from linebot.v3.messaging import (
     ReplyMessageRequest,
@@ -15,15 +14,19 @@ from linebot.v3.messaging import (
     FlexBox,
     FlexButton,
 )
-from linebot.v3.webhooks import MessageEvent, TextMessageContent, FollowEvent
+from datetime import datetime
 
 from utils.fetch_url import fetch_latest_directory, fetch_latest_png_images, fetch_folder_links, fetch_image_names
 from utils.member_status import get_member_status, load_members, save_members
 from logger import setup_logger 
 
-logger = setup_logger("bot", "logs/bot.log")
+logger = setup_logger("test_bot", "logs/test_bot.log")
 members = load_members()
 
+machine_dic = {
+        "(軋一)":"rl1/",
+        "(軋二)":"rl2/"
+    }
 def choice_mechine(message, token):
     primary_button = FlexButton(
         style='primary',
@@ -44,65 +47,47 @@ def choice_mechine(message, token):
 
     return ReplyMessageRequest(reply_token=token, messages=[FlexMessage(alt_text="機器選擇", contents=bubble)])
 
-def get_image_y1(message, token, client_id, members):
-    url = "https://linebot.tunghosteel.com:5003/rl1/"
-
-    latest_directory_url = fetch_latest_directory(url)
-    logger.info(f"Latest directory URL: {latest_directory_url}")
-
-    if message == "(軋一)最新影像":
-        img_url = fetch_latest_png_images(latest_directory_url, max_images=1)[0]
-        logger.info(f"User: {members[client_id]}, Image URL: {img_url}")
-        image_message = [
-            ImageMessage(original_content_url=img_url, preview_image_url=img_url)
-        ]
-    elif message == "(軋一)最新影像五張":
-        latest_images = fetch_latest_png_images(latest_directory_url, max_images=5)
-        logger.info(f"User: {members[client_id]}, Image URLs: {latest_images}")
-        image_message = [
-            ImageMessage(original_content_url=img_url, preview_image_url=img_url)
-            for img_url in latest_images
-        ]
-    elif message.startswith("(軋一)影像"):
-        directory_url = url + message.split(":")[-1]
-        img_url = fetch_latest_png_images(directory_url, max_images=1)
-        logger.info(f"User: {members[client_id]}, Image URLs: {img_url}")
-        image_message = [
-            ImageMessage(original_content_url=img_url, preview_image_url=img_url)
-        ]
-    return ReplyMessageRequest(reply_token=token, messages=image_message)
-
-def get_image_y2(message, token, client_id, members):
-    url = "https://linebot.tunghosteel.com:5003/rl2/"
-
-    latest_directory_url = fetch_latest_directory(url)
-    logger.info(f"Latest directory URL: {latest_directory_url}")
-
-    if message == "(軋二)最新影像":
-        img_url = fetch_latest_png_images(latest_directory_url, max_images=1)
-        if len(img_url) == 0:
-            image_message = [StickerMessage(package_id="6359", sticker_id="11069851")]
+def message_reply(img_url):
+        if img_url is None:
+            logger.info("img_url is None")
+            return [TextMessage(text="目前無即時影像")]
         else:
-            img_url = img_url[0]
-        logger.info(f"User: {members[client_id]}, Image URL: {img_url}")
-        image_message = [
-            ImageMessage(original_content_url=img_url, preview_image_url=img_url)
-        ]
-    elif message == "(軋二)最新影像五張":
+            return [ImageMessage(original_content_url=img_url, preview_image_url=img_url)]
+
+def get_image(machine_name, event, member):
+    message = event.message.text
+    token = event.reply_token
+    current_hour = datetime.now().strftime('%Y%m%d_%H')
+    machine = machine_dic.get(machine_name)
+    url = "https://linebot.tunghosteel.com:5003/" + machine
+
+    latest_directory_url = fetch_latest_directory(url)
+    logger.info(f"Latest directory URL: {latest_directory_url}")
+
+    if message == machine_name + "最新影像":
+        latest_directory_url = latest_directory_url + current_hour + "/"
+        latest_images = fetch_latest_png_images(latest_directory_url, max_images=1)
+        img_url = latest_images[0] if latest_images else None
+        logger.info(f"User: {member}, Image URL: {img_url}")
+        reply_message = message_reply(img_url)
+        
+    elif message == machine_name + "最新影像五張":
+        latest_directory_url = latest_directory_url + current_hour + "/"
         latest_images = fetch_latest_png_images(latest_directory_url, max_images=5)
-        logger.info(f"User: {members[client_id]}, Image URLs: {latest_images}")
-        image_message = [
-            ImageMessage(original_content_url=img_url, preview_image_url=img_url)
-            for img_url in latest_images
-        ]
-    elif message.startswith("(軋二)影像"):
+        logger.info(f"User: {member}, Image URLs: {latest_images}")
+        reply_message = []
+        for img_url in latest_images:
+            reply_message.extend(message_reply(img_url))
+            
+    elif message.startswith(machine_name + "影像"):
         directory_url = url + message.split(":")[-1]
         img_url = fetch_latest_png_images(directory_url, max_images=1)
-        logger.info(f"User: {members[client_id]}, Image URLs: {img_url}")
-        image_message = [
-            ImageMessage(original_content_url=img_url, preview_image_url=img_url)
-        ]
-    return ReplyMessageRequest(reply_token=token, messages=image_message)
+        logger.info(f"User: {member}, Image URLs: {img_url}")
+        reply_message = message_reply(img_url)
+    
+    return ReplyMessageRequest(reply_token=token, messages=reply_message)
+
+
 
 def create_date_menu(message, token):
     if message.startswith("(軋一)"):
@@ -229,9 +214,7 @@ def show_img(message, token, client_id):
 
     specify_url = url + message.split(":")[-1]
     logger.info(f"User: {members[client_id]}, Directory URL: {specify_url}")
-    image_message = [
-        ImageMessage(original_content_url=specify_url, preview_image_url=specify_url)
-    ]
+    image_message = message_reply(specify_url)
 
     return ReplyMessageRequest(reply_token=token, messages=image_message)
 
@@ -239,6 +222,7 @@ def handle_text_message(event, messaging_api):
     message = event.message.text
     token = event.reply_token
     client_id = event.source.user_id
+    
 
     # loading animation
     show_loading_animation_request = ShowLoadingAnimationRequest(
@@ -247,8 +231,9 @@ def handle_text_message(event, messaging_api):
     messaging_api.show_loading_animation(show_loading_animation_request)
     if get_member_status(messaging_api, event, logger):
         members = load_members()
+        member = members[client_id]
         try:
-            if message == "!":
+            if message == "!" or message == "！":
                 function_menu = ReplyMessageRequest(
                     reply_token=token,
                     messages=[
@@ -292,10 +277,10 @@ def handle_text_message(event, messaging_api):
                 imgs_menu = create_imgs_menu(message, token, client_id)
                 messaging_api.reply_message(imgs_menu)
             elif message.startswith("(軋一)最新") or message.startswith("(軋一)影像"):
-                img = get_image_y1(message, token, client_id, members)
+                img = get_image("(軋一)", event, member)
                 messaging_api.reply_message(img)
             elif message.startswith("(軋二)最新") or message.startswith("(軋二)影像"):
-                img = get_image_y2(message, token, client_id, members)
+                img = get_image("(軋二)", event, member)
                 messaging_api.reply_message(img)
             elif message.startswith("(軋一)時間") or message.startswith("(軋二)時間"):
                 png = show_img(message, token, client_id)

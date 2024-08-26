@@ -6,7 +6,6 @@ from linebot.v3.messaging import (
 )
 import traceback
 import requests
-import json
 from utils.member_status import get_member_status, load_members, save_members
 
 def process_image_request(event, logger, messaging_api):
@@ -61,7 +60,7 @@ def handle_text_message(event, logger, messaging_api):
         )
         logger.info(f"User: {client_id}, message: {message}")
 
-def handle_follow(event, messaging_api):
+def handle_follow(logger, event, messaging_api):
     user_id = event.source.user_id
     sticker_message = StickerMessage(package_id="6370", sticker_id="11088021")
     messaging_api.push_message(

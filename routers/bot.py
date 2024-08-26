@@ -1,4 +1,3 @@
-import logging
 from logging.handlers import RotatingFileHandler
 from fastapi import APIRouter, Request, Header, HTTPException
 from linebot.v3 import WebhookHandler
@@ -13,13 +12,14 @@ from linebot_logic.bot_handler import handle_text_message, handle_follow
 import os
 
 # Initialize the LINE API Client
-configuration = Configuration(access_token=os.getenv('LINE_CHANNEL_ACCESS_TOKEN'))
+configuration = Configuration(access_token=os.getenv('LINE_CHANNEL_ACCESS_TOKEN_TY'))
 api_client = ApiClient(configuration=configuration)
 messaging_api = MessagingApi(api_client)
-handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET'))
+handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET_TY'))
+webhooks_url = os.getenv('WEBHOOKS_URL_TY')
 
 router = APIRouter(
-    prefix="/webhooks/bot",
+    prefix=webhooks_url,
     tags=["bot"],
     responses={404: {"description": "Not found"}},
 )
