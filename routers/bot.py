@@ -10,6 +10,10 @@ from linebot.v3.messaging import (
 )
 from linebot.v3.webhooks import MessageEvent, TextMessageContent, FollowEvent
 from linebot_logic.linebot_handler import handle_text_message, handle_follow
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 # Logger setup
 logger = logging.getLogger("my_logger")
@@ -29,15 +33,11 @@ ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
 
-# LINE bot Webhook URL
-LINE_CHANNEL_ACCESS_TOKEN = "dkDBAvyW1juKypag2NUUzo2eS/2uTqbEZfGf+nkSFxFscnel4Av/hHotyXa1i+4qNwf1/Td4ZpkLQYhJOrZL3z+vWNdYkJ9vJUEc0o9/PUZMwrZnjRUZE9p6BGATAQ3ZlKifeWDMWpFH4UXh1zjwuAdB04t89/1O/w1cDnyilFU="
-LINE_CHANNEL_SECRET = "1d62be08d3e7008aa2c6e5fcab9eede1"
-
 # Initialize the LINE API Client
-configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
+configuration = Configuration(access_token=os.getenv('LINE_CHANNEL_ACCESS_TOKEN'))
 api_client = ApiClient(configuration=configuration)
 messaging_api = MessagingApi(api_client)
-handler = WebhookHandler(LINE_CHANNEL_SECRET)
+handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET'))
 
 router = APIRouter(
     prefix="/webhooks/bot",
@@ -51,7 +51,8 @@ async def callback(request: Request, x_line_signature: str = Header(None)):
     try:
         handler.handle(body.decode("utf-8"), x_line_signature)
     except InvalidSignatureError:
-        raise HTTPException(status_code=400, detail="chatbot handle body error.")
+        # raise HTTPException(status_code=400, detail="chatbot handle body error.")
+        pass
     return 'OK'
 
 @handler.add(MessageEvent, message=TextMessageContent)
