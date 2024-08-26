@@ -14,7 +14,8 @@ from linebot.v3.messaging import (
     FlexBox,
     FlexButton,
 )
-from datetime import datetime
+from datetime import datetime, timedelta
+import pytz
 
 from utils.fetch_url import fetch_latest_directory, fetch_latest_png_images, fetch_folder_links, fetch_image_names
 from utils.member_status import get_member_status, load_members, save_members
@@ -47,44 +48,44 @@ def choice_mechine(message, token):
 
     return ReplyMessageRequest(reply_token=token, messages=[FlexMessage(alt_text="機器選擇", contents=bubble)])
 
-def message_reply(img_url):
-        if img_url is None:
-            logger.info("img_url is None")
-            return [TextMessage(text="目前無即時影像")]
-        else:
-            return [ImageMessage(original_content_url=img_url, preview_image_url=img_url)]
+
 
 def get_image(machine_name, event):
     message = event.message.text
     token = event.reply_token
     client_id = event.source.user_id
-    current_hour = datetime.now().strftime('%Y%m%d_%H')
+    
+    tz = pytz.timezone('Asia/Taipei')
+    now = datetime.now(tz)
+    one_hour_ago = now - timedelta(hours=1)
+    time_range = [one_hour_ago.strftime('%Y%m%d_%H'), now.strftime('%Y%m%d_%H')]
+    
     machine = machine_dic.get(machine_name)
     url = "https://linebot.tunghosteel.com:5003/" + machine
 
     latest_directory_url = fetch_latest_directory(url)
     logger.info(f"Latest directory URL: {latest_directory_url}")
 
-    if message == machine_name + "最新影像":
-        # latest_directory_url = latest_directory_url + current_hour + "/"
+    if latest_directory_url.split('/')[-2] not in time_range:
+        reply_message = [TextMessage(text="一小時內無影像")]
+
+    elif message == machine_name + "最新影像":
         latest_images = fetch_latest_png_images(latest_directory_url, max_images=1)
         img_url = latest_images[0] if latest_images else None
         logger.info(f"User: {client_id}, Image URL: {img_url}")
-        reply_message = message_reply(img_url)
+        reply_message = [ImageMessage(original_content_url=img_url, preview_image_url=img_url)]
         
     elif message == machine_name + "最新影像五張":
         # latest_directory_url = latest_directory_url + current_hour + "/"
         latest_images = fetch_latest_png_images(latest_directory_url, max_images=5)
         logger.info(f"User: {client_id}, Image URLs: {latest_images}")
-        reply_message = []
-        for img_url in latest_images:
-            reply_message.extend(message_reply(img_url))
+        reply_message = [[ImageMessage(original_content_url=img_url, preview_image_url=img_url)] for img_url in latest_images]
             
     elif message.startswith(machine_name + "影像"):
         directory_url = url + message.split(":")[-1]
         img_url = fetch_latest_png_images(directory_url, max_images=1)
         logger.info(f"User: {client_id}, Image URLs: {img_url}")
-        reply_message = message_reply(img_url)
+        reply_message = [ImageMessage(original_content_url=img_url, preview_image_url=img_url)]
     
     return ReplyMessageRequest(reply_token=token, messages=reply_message)
 
