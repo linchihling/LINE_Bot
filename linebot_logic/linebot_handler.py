@@ -17,11 +17,14 @@ from linebot.v3.messaging import (
 from linebot.v3.webhooks import MessageEvent, TextMessageContent, FollowEvent
 from linebot_logic.utils import fetch_latest_directory, fetch_latest_png_images, fetch_folder_links, fetch_image_names
 import traceback
+import json
 
 from logger import setup_logger 
+logger = setup_logger("bot", "logs/bot.log")
 
-logger = setup_logger("bot_logger", "logs/bot.log")
-
+from linebot_logic.member_status import get_member_status
+with open('members.json', 'r') as file:
+    members = json.load(file)
 
 def choice_mechine(message, token):
     primary_button = FlexButton(
@@ -51,13 +54,13 @@ def get_image_y1(message, token, client_id):
 
     if message == "(軋一)最新影像":
         img_url = fetch_latest_png_images(latest_directory_url, max_images=1)[0]
-        logger.info(f"Client ID: {client_id}, Image URL: {img_url}")
+        logger.info(f"User: {members[client_id]}, Image URL: {img_url}")
         image_message = [
             ImageMessage(original_content_url=img_url, preview_image_url=img_url)
         ]
     elif message == "(軋一)最新影像五張":
         latest_images = fetch_latest_png_images(latest_directory_url, max_images=5)
-        logger.info(f"Client ID: {client_id}, Image URLs: {latest_images}")
+        logger.info(f"User: {members[client_id]}, Image URLs: {latest_images}")
         image_message = [
             ImageMessage(original_content_url=img_url, preview_image_url=img_url)
             for img_url in latest_images
@@ -65,7 +68,7 @@ def get_image_y1(message, token, client_id):
     elif message.startswith("(軋一)影像"):
         directory_url = url + message.split(":")[-1]
         img_url = fetch_latest_png_images(directory_url, max_images=1)
-        logger.info(f"Client ID: {client_id}, Image URLs: {img_url}")
+        logger.info(f"User: {members[client_id]}, Image URLs: {img_url}")
         image_message = [
             ImageMessage(original_content_url=img_url, preview_image_url=img_url)
         ]
@@ -83,13 +86,13 @@ def get_image_y2(message, token, client_id):
             image_message = [StickerMessage(package_id="6359", sticker_id="11069851")]
         else:
             img_url = img_url[0]
-        logger.info(f"Client ID: {client_id}, Image URL: {img_url}")
+        logger.info(f"User: {members[client_id]}, Image URL: {img_url}")
         image_message = [
             ImageMessage(original_content_url=img_url, preview_image_url=img_url)
         ]
     elif message == "(軋二)最新影像五張":
         latest_images = fetch_latest_png_images(latest_directory_url, max_images=5)
-        logger.info(f"Client ID: {client_id}, Image URLs: {latest_images}")
+        logger.info(f"User: {members[client_id]}, Image URLs: {latest_images}")
         image_message = [
             ImageMessage(original_content_url=img_url, preview_image_url=img_url)
             for img_url in latest_images
@@ -97,7 +100,7 @@ def get_image_y2(message, token, client_id):
     elif message.startswith("(軋二)影像"):
         directory_url = url + message.split(":")[-1]
         img_url = fetch_latest_png_images(directory_url, max_images=1)
-        logger.info(f"Client ID: {client_id}, Image URLs: {img_url}")
+        logger.info(f"User: {members[client_id]}, Image URLs: {img_url}")
         image_message = [
             ImageMessage(original_content_url=img_url, preview_image_url=img_url)
         ]
@@ -227,7 +230,7 @@ def show_img(message, token, client_id):
         url = "https://linebot.tunghosteel.com:5003/rl2/"
 
     specify_url = url + message.split(":")[-1]
-    logger.info(f"Client ID: {client_id}, Directory URL: {specify_url}")
+    logger.info(f"User: {members[client_id]}, Directory URL: {specify_url}")
     image_message = [
         ImageMessage(original_content_url=specify_url, preview_image_url=specify_url)
     ]
@@ -244,8 +247,7 @@ def handle_text_message(event, messaging_api):
         chat_id=client_id, loadingSeconds=5
     )
     messaging_api.show_loading_animation(show_loading_animation_request)
-
-    if message:
+    if get_member_status(members, logger, client_id):
         try:
             if message == "!":
                 function_menu = ReplyMessageRequest(
@@ -308,11 +310,29 @@ def handle_text_message(event, messaging_api):
                     messages=[TextMessage(text="Unable to process your request")],
                 )
             )
+    else:
+        messaging_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=token,
+                messages=[TextMessage(text="You are not a member, please contact the developer.")],
+            )
+        )
+        logger.info(f"User: {user_id}, message: {message}")
 
 def handle_follow(event, messaging_api):
     user_id = event.source.user_id
-    sticker_message = StickerMessage(package_id="6370", sticker_id="11088021")
-    messaging_api.push_message(
-        user_id, messages=[TextMessage(text="輸入!開啟功能選單"), sticker_message]
-    )
-    logger.info(f"New follower: {user_id}")
+    if get_member_status(members, logger, user_id):
+        sticker_message = StickerMessage(package_id="6370", sticker_id="11088021")
+        messaging_api.push_message(
+            user_id, messages=[TextMessage(text="輸入!開啟功能選單"), sticker_message]
+        )
+        logger.info(f"New follower: {user_id}")
+    else:
+        messaging_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=token,
+                messages=[TextMessage(text="You are not a member, please contact the developer.")],
+            )
+        )
+        logger.info(f"User: {user_id}, message: {message}")
+
