@@ -66,14 +66,14 @@ def get_image(machine_name, event):
     logger.info(f"Latest directory URL: {latest_directory_url}")
 
     if message == machine_name + "最新影像":
-        latest_directory_url = latest_directory_url + current_hour + "/"
+        # latest_directory_url = latest_directory_url + current_hour + "/"
         latest_images = fetch_latest_png_images(latest_directory_url, max_images=1)
         img_url = latest_images[0] if latest_images else None
         logger.info(f"User: {client_id}, Image URL: {img_url}")
         reply_message = message_reply(img_url)
         
     elif message == machine_name + "最新影像五張":
-        latest_directory_url = latest_directory_url + current_hour + "/"
+        # latest_directory_url = latest_directory_url + current_hour + "/"
         latest_images = fetch_latest_png_images(latest_directory_url, max_images=5)
         logger.info(f"User: {client_id}, Image URLs: {latest_images}")
         reply_message = []
