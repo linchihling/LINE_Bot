@@ -5,11 +5,11 @@ import hmac
 from fastapi.testclient import TestClient
 from main import app
 from dotenv import load_dotenv
-import os
 load_dotenv()
 
 channel_secret = os.getenv('LINE_CHANNEL_ACCESS_TOKEN_2')
 client = TestClient(app)
+
 
 def test_callback():
     body = '{"events":[],"destination":"U000000000000000000000003d9"}'

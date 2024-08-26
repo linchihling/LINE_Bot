@@ -9,7 +9,7 @@ from linebot.v3.messaging import (
     MessagingApi,
 )
 from linebot.v3.webhooks import MessageEvent, TextMessageContent, FollowEvent
-from linebot_logic.linebot_handler import handle_text_message, handle_follow
+from linebot_logic.bot_handler import handle_text_message, handle_follow
 import os
 
 # Initialize the LINE API Client

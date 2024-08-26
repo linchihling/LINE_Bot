@@ -15,7 +15,7 @@ import os
 import requests
 import json
 from logger import setup_logger
-from linebot_logic.member_status import get_member_status
+from utils.member_status import get_member_status, load_members, save_members
 
 logger = setup_logger("bot_test", "logs/bot_test.log")
 
@@ -25,9 +25,7 @@ api_client = ApiClient(configuration=configuration)
 messaging_api = MessagingApi(api_client)
 handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET_2'))
 
-with open('members.json', 'r') as file:
-    members = json.load(file)
-
+members = load_members()
 router = APIRouter(
     prefix="/webhooks/test",
     tags=["test"],
@@ -49,7 +47,9 @@ def handle_text_message(event):
     message = event.message.text
     token = event.reply_token
     user_id = event.source.user_id
-    if get_member_status(members, logger, user_id):
+    if get_member_status(messaging_api, event, logger):
+        members = load_members()
+        logger.info(f"User: {members[user_id]}, message: {message}")
         show_loading_animation_request = ShowLoadingAnimationRequest(
             chat_id=user_id, loadingSeconds=5
         )
@@ -60,10 +60,9 @@ def handle_text_message(event):
                 messages=[TextMessage(text=message)]
             )
             messaging_api.reply_message(reply_message)
-            logger.info(f"User: {members[user_id]}, message: {message}")
         except Exception as e:
             traceback.print_exc()
-            logger.error(f"Error: {str(e)}")
+            logger.error(f"User: {user_id}, Error: {str(e)}")
             messaging_api.reply_message(
                 ReplyMessageRequest(
                     reply_token=token,
@@ -78,3 +77,8 @@ def handle_text_message(event):
             )
         )
         logger.info(f"User: {user_id}, message: {message}")
+
+# if __name__ == "__main__":
+#     import uvicorn
+
+#     uvicorn.run(router, host="0.0.0.0", port=6000)
