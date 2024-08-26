@@ -6,10 +6,10 @@ from linebot.exceptions import InvalidSignatureError
 from linebot.models import TextMessage, MessageEvent, TextSendMessage, StickerMessage, \
     StickerSendMessage
 from pydantic import BaseModel
-from dotenv import load_dotenv
 import os
+from logger import setup_logger 
 
-load_dotenv()
+logger = setup_logger("bot_test_logger", "logs/bot_test.log")
 
 line_bot_api = LineBotApi(os.getenv('LINE_CHANNEL_ACCESS_TOKEN_2'))
 handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET_2'))
@@ -37,10 +37,12 @@ def message_text(event):
     print("!!!!!!!!!!!!!!!!!!!!!!")
     print(event)
     print("!!!!!!!!!!!!!!!!!!!!!!")
+    message = event.message.text
     line_bot_api.reply_message(
         event.reply_token,
-        TextSendMessage(text=event.message.text)
+        TextSendMessage(message)
     )
+    logger.info(f"reply message: {message}")
 
 
 @handler.add(MessageEvent, message=StickerMessage)

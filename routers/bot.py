@@ -10,28 +10,7 @@ from linebot.v3.messaging import (
 )
 from linebot.v3.webhooks import MessageEvent, TextMessageContent, FollowEvent
 from linebot_logic.linebot_handler import handle_text_message, handle_follow
-from dotenv import load_dotenv
 import os
-
-load_dotenv()
-
-# Logger setup
-logger = logging.getLogger("my_logger")
-logger.setLevel(logging.INFO)
-
-# RotatingFileHandler
-fh = RotatingFileHandler("logs/bot.log", maxBytes=2000000, backupCount=5)
-fh.setLevel(logging.INFO)
-
-# StreamHandler
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-
-formatter = logging.Formatter("%(levelname)s - %(message)s")
-fh.setFormatter(formatter)
-ch.setFormatter(formatter)
-logger.addHandler(fh)
-logger.addHandler(ch)
 
 # Initialize the LINE API Client
 configuration = Configuration(access_token=os.getenv('LINE_CHANNEL_ACCESS_TOKEN'))

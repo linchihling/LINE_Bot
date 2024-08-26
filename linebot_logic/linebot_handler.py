@@ -18,7 +18,10 @@ from linebot.v3.webhooks import MessageEvent, TextMessageContent, FollowEvent
 from linebot_logic.utils import fetch_latest_directory, fetch_latest_png_images, fetch_folder_links, fetch_image_names
 import traceback
 
-logger = logging.getLogger("my_logger")
+from logger import setup_logger 
+
+logger = setup_logger("bot_logger", "logs/bot.log")
+
 
 def choice_mechine(message, token):
     primary_button = FlexButton(
