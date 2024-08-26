@@ -65,3 +65,5 @@ def fetch_latest_png_images(directory_url: str, max_images: int = 6) -> List[str
     png_links = [link.get('href') for link in soup.find_all('a') if link.get('href').endswith(PNG_EXTENSION)]
     latest_png_links = png_links[-max_images:]
     return [directory_url + img for img in latest_png_links]
+
+

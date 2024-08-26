@@ -16,6 +16,7 @@ from linebot.v3.messaging import (
 )
 from datetime import datetime, timedelta
 import pytz
+import os
 
 from utils.fetch_url import fetch_latest_directory, fetch_latest_png_images, fetch_folder_links, fetch_image_names
 from utils.member_status import get_member_status, load_members, save_members
@@ -140,7 +141,7 @@ def create_time_menu(message, token):
 
     folder_links = fetch_folder_links(url)[1:]
     date = message.split(':')[1]
-    folder_links = [link for link in folder_links if link.startswith(date)]
+    folder_links = [link.split('/')[0] for link in folder_links if link.startswith(date)]
 
     def create_button(label, action):
         return FlexButton(
@@ -170,6 +171,9 @@ def create_time_menu(message, token):
     return ReplyMessageRequest(reply_token=token, messages=[FlexMessage(alt_text="Flex Message", contents=carousel)])
 
 def create_imgs_menu(message, token, client_id):
+
+    search_date = message.split(":")[-1]
+    
     if message.startswith("!(軋一)"):
         url = "https://linebot.tunghosteel.com:5003/rl1/"
         name = "(軋一)時間:"
@@ -177,9 +181,10 @@ def create_imgs_menu(message, token, client_id):
         url = "https://linebot.tunghosteel.com:5003/rl2/"
         name = "(軋二)時間:"
 
-    directory_url = url + message.split(":")[-1]
-    logger.info(f"Client ID: {client_id}, Directory URL: {directory_url}")
-    image_names = fetch_image_names(directory_url)[1:]
+    directory_url = url + search_date + '/' 
+    logger.info(f"Client ID: {client_id}, (搜尋)Directory URL: {directory_url}")
+    img_names = fetch_image_names(directory_url)[1:]                                         
+    images_list = list({filename.split('_')[2] + '_' + filename.split('_')[2]: filename for filename in img_names}.values())                  # latest img every minutes
 
     def create_button(label, action):
         return FlexButton(
@@ -189,10 +194,10 @@ def create_imgs_menu(message, token, client_id):
         )
 
     bubbles = []
-    for i in range(0, len(image_names), 10):
+    for i in range(0, len(images_list), 10):
         buttons = []
-        for link in image_names[i:i+10]:
-            buttons.append(create_button(str(link), MessageAction(label=f"{link}", text=name + message.split(":")[-1] + link)))
+        for link in images_list[i:i+10]:
+            buttons.append(create_button(str(link), MessageAction(label=f"{'_'.join(link.split('_')[1:4])}", text=name + link)))
 
         bubble = FlexBubble(
             footer=FlexBox(
@@ -213,10 +218,13 @@ def show_img(message, token, client_id):
         url = "https://linebot.tunghosteel.com:5003/rl1/"
     elif message.startswith("(軋二)"):
         url = "https://linebot.tunghosteel.com:5003/rl2/"
-
-    specify_url = url + message.split(":")[-1]
-    logger.info(f"User: {client_id}, Directory URL: {specify_url}")
-    image_message = [ImageMessage(original_content_url=specify_url, preview_image_url=specify_url)]
+    
+    png_name = message.split(":")[-1]
+    search_date = png_name.split('_')
+    date = search_date[0].replace('-', '') + '_' + search_date[1]
+    png_url = os.path.join(url, date, png_name)
+    logger.info(f"User: {client_id}, Directory URL: {png_url}")
+    image_message = [ImageMessage(original_content_url=png_url, preview_image_url=png_url)]
 
     return ReplyMessageRequest(reply_token=token, messages=image_message)
 
