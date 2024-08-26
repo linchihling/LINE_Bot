@@ -12,6 +12,12 @@ services:
       - LINE_CHANNEL_SECRET=${LINE_CHANNEL_SECRET}
       - LINE_CHANNEL_ACCESS_TOKEN_2=${LINE_CHANNEL_ACCESS_TOKEN_2}
       - LINE_CHANNEL_SECRET_2=${LINE_CHANNEL_SECRET_2}
-    container_name: line_bot  
-    # command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "6000", "--reload"]
+      - LINE_CHANNEL_ACCESS_TOKEN_3=${LINE_CHANNEL_ACCESS_TOKEN_3}
+      - LINE_CHANNEL_SECRET_3=${LINE_CHANNEL_SECRET_3}
+    container_name: line_bot 
+    volumes:
+      - ./:/bot 
+    restart: unless-stopped
+    
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "6000", "--reload"]
     
