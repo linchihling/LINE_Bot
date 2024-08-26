@@ -54,9 +54,10 @@ def message_reply(img_url):
         else:
             return [ImageMessage(original_content_url=img_url, preview_image_url=img_url)]
 
-def get_image(machine_name, event, member):
+def get_image(machine_name, event):
     message = event.message.text
     token = event.reply_token
+    client_id = event.source.user_id
     current_hour = datetime.now().strftime('%Y%m%d_%H')
     machine = machine_dic.get(machine_name)
     url = "https://linebot.tunghosteel.com:5003/" + machine
@@ -68,13 +69,13 @@ def get_image(machine_name, event, member):
         latest_directory_url = latest_directory_url + current_hour + "/"
         latest_images = fetch_latest_png_images(latest_directory_url, max_images=1)
         img_url = latest_images[0] if latest_images else None
-        logger.info(f"User: {member}, Image URL: {img_url}")
+        logger.info(f"User: {client_id}, Image URL: {img_url}")
         reply_message = message_reply(img_url)
         
     elif message == machine_name + "最新影像五張":
         latest_directory_url = latest_directory_url + current_hour + "/"
         latest_images = fetch_latest_png_images(latest_directory_url, max_images=5)
-        logger.info(f"User: {member}, Image URLs: {latest_images}")
+        logger.info(f"User: {client_id}, Image URLs: {latest_images}")
         reply_message = []
         for img_url in latest_images:
             reply_message.extend(message_reply(img_url))
@@ -82,7 +83,7 @@ def get_image(machine_name, event, member):
     elif message.startswith(machine_name + "影像"):
         directory_url = url + message.split(":")[-1]
         img_url = fetch_latest_png_images(directory_url, max_images=1)
-        logger.info(f"User: {member}, Image URLs: {img_url}")
+        logger.info(f"User: {client_id}, Image URLs: {img_url}")
         reply_message = message_reply(img_url)
     
     return ReplyMessageRequest(reply_token=token, messages=reply_message)
@@ -213,7 +214,7 @@ def show_img(message, token, client_id):
         url = "https://linebot.tunghosteel.com:5003/rl2/"
 
     specify_url = url + message.split(":")[-1]
-    logger.info(f"User: {members[client_id]}, Directory URL: {specify_url}")
+    logger.info(f"User: {client_id}, Directory URL: {specify_url}")
     image_message = message_reply(specify_url)
 
     return ReplyMessageRequest(reply_token=token, messages=image_message)
@@ -229,9 +230,10 @@ def handle_text_message(event, messaging_api):
         chat_id=client_id, loadingSeconds=5
     )
     messaging_api.show_loading_animation(show_loading_animation_request)
-    if get_member_status(messaging_api, event, logger):
-        members = load_members()
-        member = members[client_id]
+    # if get_member_status(messaging_api, event, logger):
+    if message:
+        # members = load_members()
+        # member = members[client_id]
         try:
             if message == "!" or message == "！":
                 function_menu = ReplyMessageRequest(
@@ -277,10 +279,10 @@ def handle_text_message(event, messaging_api):
                 imgs_menu = create_imgs_menu(message, token, client_id)
                 messaging_api.reply_message(imgs_menu)
             elif message.startswith("(軋一)最新") or message.startswith("(軋一)影像"):
-                img = get_image("(軋一)", event, member)
+                img = get_image("(軋一)", event)
                 messaging_api.reply_message(img)
             elif message.startswith("(軋二)最新") or message.startswith("(軋二)影像"):
-                img = get_image("(軋二)", event, member)
+                img = get_image("(軋二)", event)
                 messaging_api.reply_message(img)
             elif message.startswith("(軋一)時間") or message.startswith("(軋二)時間"):
                 png = show_img(message, token, client_id)
@@ -294,14 +296,14 @@ def handle_text_message(event, messaging_api):
                     messages=[TextMessage(text="Unable to process your request")],
                 )
             )
-    else:
-        messaging_api.reply_message(
-            ReplyMessageRequest(
-                reply_token=token,
-                messages=[TextMessage(text="You are not a member, please contact the developer.")],
-            )
-        )
-        logger.info(f"User: {client_id}, message: {message}")
+    # else:
+    #     messaging_api.reply_message(
+    #         ReplyMessageRequest(
+    #             reply_token=token,
+    #             messages=[TextMessage(text="You are not a member, please contact the developer.")],
+    #         )
+    #     )
+    #     logger.info(f"User: {client_id}, message: {message}")
 
 def handle_follow(event, messaging_api):
     user_id = event.source.user_id

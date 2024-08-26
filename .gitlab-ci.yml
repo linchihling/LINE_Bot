@@ -12,8 +12,4 @@ deploy:
   stage: deploy
   script:
     - scp -P 5720 docker-compose.yml s070@10.224.17.96:/srv/services/ths-line-bot/docker-compose.yml
-    - ssh -p 5720 s070@10.224.17.96 << 'EOF'
-        cd /srv/services/ths-line-bot || exit
-        docker compose pull
-        docker compose up -d
-      EOF
+    - ssh -p 5720 s070@10.224.17.96 "cd /srv/services/ths-line-bot && docker compose pull && docker compose up -d"

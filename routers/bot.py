@@ -12,11 +12,11 @@ from linebot_logic.bot_handler import handle_text_message, handle_follow
 import os
 
 # Initialize the LINE API Client
-configuration = Configuration(access_token=os.getenv('LINE_CHANNEL_ACCESS_TOKEN_TY'))
+configuration = Configuration(access_token=os.getenv('LINE_CHANNEL_ACCESS_TOKEN'))
 api_client = ApiClient(configuration=configuration)
 messaging_api = MessagingApi(api_client)
-handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET_TY'))
-webhooks_url = os.getenv('WEBHOOKS_URL_TY')
+handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET'))
+webhooks_url = os.getenv('WEBHOOKS_URL_BOT')
 
 router = APIRouter(
     prefix=webhooks_url,
