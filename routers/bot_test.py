@@ -12,8 +12,6 @@ from linebot.v3.messaging import (
 from linebot.v3.webhooks import MessageEvent, TextMessageContent, FollowEvent
 import traceback
 import os
-import requests
-import json
 from logger import setup_logger
 from utils.member_status import get_member_status, load_members, save_members
 
@@ -24,10 +22,11 @@ configuration = Configuration(access_token=os.getenv('LINE_CHANNEL_ACCESS_TOKEN_
 api_client = ApiClient(configuration=configuration)
 messaging_api = MessagingApi(api_client)
 handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET_2'))
+webhooks_url = os.getenv('WEBHOOKS_URL_TEST')
 
 members = load_members()
 router = APIRouter(
-    prefix="/webhooks/test",
+    prefix=webhooks_url,
     tags=["test"],
     responses={404: {"description": "Not found"}},
 )
