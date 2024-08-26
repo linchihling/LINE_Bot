@@ -216,7 +216,7 @@ def show_img(message, token, client_id):
 
     specify_url = url + message.split(":")[-1]
     logger.info(f"User: {client_id}, Directory URL: {specify_url}")
-    image_message = [ImageMessage(original_content_url=img_url, preview_image_url=img_url)]
+    image_message = [ImageMessage(original_content_url=specify_url, preview_image_url=specify_url)]
 
     return ReplyMessageRequest(reply_token=token, messages=image_message)
 
