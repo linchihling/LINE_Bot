@@ -6,7 +6,6 @@ from linebot.exceptions import InvalidSignatureError
 from linebot.models import TextMessage, MessageEvent, TextSendMessage, StickerMessage, \
     StickerSendMessage
 from pydantic import BaseModel
-from dependencies import get_token_header
 
 
 LINE_CHANNEL_ACCESS_TOKEN = "PNTQ48ZPiiWOv0YBbsbBRJ2ZzdlZD719spRZKFChQEP0M8e7E4oIu0N3tqF8kOL+qbDMoKmk496hYchNI+Q7JnujrsK5K7nwssAcUdMj2qQnzSxuKaY3CSEsHS7xE0sgrPMOtDSCtvfLaLeTC04BNgdB04t89/1O/w1cDnyilFU="
