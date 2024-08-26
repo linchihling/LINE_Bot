@@ -1,3 +1,4 @@
+import logging
 from linebot.v3.messaging import (
     ReplyMessageRequest,
     TextMessage,
@@ -13,12 +14,11 @@ from linebot.v3.messaging import (
     FlexBox,
     FlexButton,
 )
+from linebot.v3.webhooks import MessageEvent, TextMessageContent, FollowEvent
+from linebot_logic.utils import fetch_latest_directory, fetch_latest_png_images, fetch_folder_links, fetch_image_names
 import traceback
-import logging
-from .utils import fetch_latest_directory, fetch_latest_png_images, fetch_folder_links, fetch_image_names
 
 logger = logging.getLogger("my_logger")
-messaging_api = None  # This will be set in the project router
 
 def choice_mechine(message, token):
     primary_button = FlexButton(
@@ -231,11 +231,12 @@ def show_img(message, token, client_id):
 
     return ReplyMessageRequest(reply_token=token, messages=image_message)
 
-def handle_text_message(event):
+def handle_text_message(event, messaging_api):
     message = event.message.text
     token = event.reply_token
     client_id = event.source.user_id
 
+    # loading animation
     show_loading_animation_request = ShowLoadingAnimationRequest(
         chat_id=client_id, loadingSeconds=5
     )
@@ -305,7 +306,7 @@ def handle_text_message(event):
                 )
             )
 
-def handle_follow(event):
+def handle_follow(event, messaging_api):
     user_id = event.source.user_id
     sticker_message = StickerMessage(package_id="6370", sticker_id="11088021")
     messaging_api.push_message(

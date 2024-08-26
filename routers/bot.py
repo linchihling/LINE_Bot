@@ -9,6 +9,7 @@ from linebot.v3.messaging import (
     MessagingApi,
 )
 from linebot.v3.webhooks import MessageEvent, TextMessageContent, FollowEvent
+from linebot_logic.linebot_handler import handle_text_message, handle_follow
 
 # Logger setup
 logger = logging.getLogger("my_logger")
@@ -44,12 +45,6 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-# router = APIRouter()
-from pydantic import BaseModel
-class Line(BaseModel):
-    destination: str
-    events: list
-
 @router.post("/line")
 async def callback(request: Request, x_line_signature: str = Header(None)):
     body = await request.body()
@@ -59,8 +54,10 @@ async def callback(request: Request, x_line_signature: str = Header(None)):
         raise HTTPException(status_code=400, detail="chatbot handle body error.")
     return 'OK'
 
-# Import the line bot handlers from linebot_logic
-from linebot_logic.linebot_handler import handle_text_message, handle_follow
+@handler.add(MessageEvent, message=TextMessageContent)
+def handle_message(event):
+    handle_text_message(event, messaging_api)
 
-handler.add(MessageEvent, message=TextMessageContent)(handle_text_message)
-handler.add(FollowEvent)(handle_follow)
+@handler.add(FollowEvent)
+def handle_follow_event(event):
+    handle_follow(event, messaging_api)
