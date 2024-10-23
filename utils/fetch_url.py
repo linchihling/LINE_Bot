@@ -2,8 +2,33 @@ import requests
 from bs4 import BeautifulSoup
 from typing import List
 
+
 HTML_PARSER = 'html.parser'
 PNG_EXTENSION = '.png'
+
+def fetch_last_image(machine: str) -> List[str]:
+    if machine == "rl1":
+        url = "http://10.224.88.198:8081/get_latest_data"
+    elif machine == "rl2":
+        url = "http://10.224.88.212:8081/get_latest_data"
+    else:
+        return []
+    response = requests.get(url).json()
+    image_path = response[0].get("path").lstrip('/static/images/')
+    # image_path = 20241022_16/2024-10-22_16_51_30_40_1200_D32.png
+    return image_path
+
+def fetch_last_5_images(machine: str) -> List[str]:
+    if machine == "rl1":
+        url = "http://10.224.88.198:8081/get_last_5_images"
+    elif machine == "rl2":
+        url = "http://10.224.88.212:8081/get_last_5_images"
+    else:
+        return []
+    response = requests.get(url).json()
+    images_path = [path.get("path").lstrip('/static/images/') for path in response]
+    
+    return images_path
 
 def fetch_html_soup(url: str) -> BeautifulSoup:
     """

@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 import pytz
 import os
 
-from utils.fetch_url import fetch_latest_directory, fetch_latest_png_images, fetch_folder_links, fetch_image_names
+from utils.fetch_url import fetch_folder_links, fetch_image_names, fetch_last_5_images
 from utils.member_status import get_member_status, load_members, save_members
 from logger import setup_logger 
 
@@ -26,8 +26,8 @@ logger = setup_logger("test_bot", "logs/test_bot.log")
 members = load_members()
 
 machine_dic = {
-        "(軋一)":"rl1/",
-        "(軋二)":"rl2/"
+        "(軋一)":"rl1",
+        "(軋二)":"rl2"
     }
 def choice_mechine(message, token):
     primary_button = FlexButton(
@@ -62,31 +62,25 @@ def get_image(machine_name, event):
     time_range = [one_hour_ago.strftime('%Y%m%d_%H'), now.strftime('%Y%m%d_%H')]
     
     machine = machine_dic.get(machine_name)
-    url = "https://linebot.tunghosteel.com:5003/" + machine
+    url = os.path.join("https://linebot.tunghosteel.com:5003/" , machine)
 
-    latest_directory_url = fetch_latest_directory(url)
-    logger.info(f"Latest directory URL: {latest_directory_url}")
-
-    if latest_directory_url.split('/')[-2] not in time_range:
+    latest_5_images = fetch_last_5_images(machine)
+    logger.info(f"{machine_name} successfully fetched the latest 5 images: {latest_5_images}")
+    now_hour = latest_5_images[0].split('/')[0]
+    if now_hour not in time_range:
         reply_message = [TextMessage(text="一小時內無影像")]
+        logger.info(f"{machine_name} doesn't have any images from the past hour")
 
     elif message == machine_name + "最新影像":
-        latest_images = fetch_latest_png_images(latest_directory_url, max_images=1)
-        img_url = latest_images[0] if latest_images else None
-        logger.info(f"User: {client_id}, Image URL: {img_url}")
+        latest_image = latest_5_images[0]
+        img_url = os.path.join(url, latest_image)
+        # latest_image = "20241023_10/2024-10-23_10_01_21_63_900_D25.png"
         reply_message = [ImageMessage(original_content_url=img_url, preview_image_url=img_url)]
+        logger.info(f"{machine_name} reply latest image: {latest_image}")
         
     elif message == machine_name + "最新影像五張":
-        # latest_directory_url = latest_directory_url + current_hour + "/"
-        latest_images = fetch_latest_png_images(latest_directory_url, max_images=5)
-        logger.info(f"User: {client_id}, Image URLs: {latest_images}")
-        reply_message = [ImageMessage(original_content_url=img_url, preview_image_url=img_url) for img_url in latest_images]
-            
-    elif message.startswith(machine_name + "影像"):
-        directory_url = url + message.split(":")[-1]
-        img_url = fetch_latest_png_images(directory_url, max_images=1)
-        logger.info(f"User: {client_id}, Image URLs: {img_url}")
-        reply_message = [ImageMessage(original_content_url=img_url, preview_image_url=img_url)]
+        reply_message = [ImageMessage(original_content_url= url + img, preview_image_url= url + img) for img in latest_5_images]
+        logger.info(f"{machine_name} reply latest 5 images: {latest_5_images}")
     
     return ReplyMessageRequest(reply_token=token, messages=reply_message)
 
@@ -287,10 +281,10 @@ def handle_text_message(event, messaging_api):
             elif message.startswith("!(軋一)搜尋:") or message.startswith("!(軋二)搜尋:"):
                 imgs_menu = create_imgs_menu(message, token, client_id)
                 messaging_api.reply_message(imgs_menu)
-            elif message.startswith("(軋一)最新") or message.startswith("(軋一)影像"):
+            elif message.startswith("(軋一)最新") :
                 img = get_image("(軋一)", event)
                 messaging_api.reply_message(img)
-            elif message.startswith("(軋二)最新") or message.startswith("(軋二)影像"):
+            elif message.startswith("(軋二)最新") :
                 img = get_image("(軋二)", event)
                 messaging_api.reply_message(img)
             elif message.startswith("(軋一)時間") or message.startswith("(軋二)時間"):

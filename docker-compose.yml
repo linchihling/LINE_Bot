@@ -18,7 +18,7 @@ services:
       - LINE_CHANNEL_SECRET_3=${LINE_CHANNEL_SECRET_3}
       - WEBHOOKS_URL_TEST=${WEBHOOKS_URL_TEST}
     container_name: line_bot 
-    restart: unless-stopped
+    restart: always
     
     command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "6000", "--reload"]
     

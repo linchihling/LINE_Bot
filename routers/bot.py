@@ -18,6 +18,7 @@ messaging_api = MessagingApi(api_client)
 handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET'))
 webhooks_url = os.getenv('WEBHOOKS_URL_BOT')
 
+
 router = APIRouter(
     prefix=webhooks_url,
     tags=["bot"],
