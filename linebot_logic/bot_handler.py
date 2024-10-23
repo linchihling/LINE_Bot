@@ -212,13 +212,10 @@ def show_img(message, token, client_id):
         url = "https://linebot.tunghosteel.com:5003/rl1/"
     elif message.startswith("(軋二)"):
         url = "https://linebot.tunghosteel.com:5003/rl2/"
-    
-    png_name = message.split(":")[-1]
-    search_date = png_name.split('_')
-    date = search_date[0].replace('-', '') + '_' + search_date[1]
-    png_url = os.path.join(url, date, png_name)
-    logger.info(f"User: {client_id}, Directory URL: {png_url}")
-    image_message = [ImageMessage(original_content_url=png_url, preview_image_url=png_url)]
+
+    specify_url = url + message.split(":")[-1]
+    logger.info(f"User: {client_id}, Directory URL: {specify_url}")
+    image_message = [ImageMessage(original_content_url=specify_url, preview_image_url=specify_url)]
 
     return ReplyMessageRequest(reply_token=token, messages=image_message)
 
