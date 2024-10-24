@@ -6,30 +6,63 @@ from linebot.v3.messaging import (
     TextMessage,
     Configuration,
     ApiClient,
-    MessagingApi,
-    ShowLoadingAnimationRequest,
+    MessagingApi
 )
-from linebot.v3.webhooks import MessageEvent, TextMessageContent, FollowEvent
-import traceback
+from linebot.v3.webhooks import MessageEvent, TextMessageContent
 import os
+import re
+import random
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from logger import setup_logger
-from utils.member_status import get_member_status, load_members, save_members
 
 logger = setup_logger("bot_test", "logs/bot_test.log")
 
 # Initialize the LINE API Client
-configuration = Configuration(access_token=os.getenv('LINE_CHANNEL_ACCESS_TOKEN_2'))
+configuration = Configuration(access_token=os.getenv('LINE_CHANNEL_ACCESS_TOKEN_3'))
 api_client = ApiClient(configuration=configuration)
 messaging_api = MessagingApi(api_client)
-handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET_2'))
+handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET_3'))
 webhooks_url = os.getenv('WEBHOOKS_URL_TEST')
 
-members = load_members()
 router = APIRouter(
     prefix=webhooks_url,
     tags=["test"],
     responses={404: {"description": "Not found"}},
 )
+
+# 公司郵箱域名
+COMPANY_DOMAIN = "tunghosteel.com"
+
+# 存儲待驗證的用戶信息
+pending_verifications = {}
+
+# 存儲已驗證的用戶
+authorized_users = set()
+
+def is_company_email(email):
+    return email.lower().endswith(f"@{COMPANY_DOMAIN}")
+
+def generate_verification_code():
+    return ''.join(random.choices('0123456789', k=6))
+
+def send_verification_email(email, code):
+    sender_email = "chihling870916@gmail.com"
+    sender_password = "ohhv xzwr nmbv bcml"
+
+    message = MIMEMultipart()
+    message["From"] = sender_email
+    message["To"] = email
+    message["Subject"] = "LINE Bot Verification Code"
+
+    body = f"Your verification code is: {code}"
+    message.attach(MIMEText(body, "plain"))
+
+    with smtplib.SMTP("smtp.gmail.com", 587) as server:
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, email, message.as_string())
 
 @router.post("/line")
 async def callback(request: Request, x_line_signature: str = Header(None)):
@@ -40,44 +73,39 @@ async def callback(request: Request, x_line_signature: str = Header(None)):
         logger.error("Invalid signature error")
     return 'OK'
 
-
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_text_message(event):
+    user_id = event.source.user_id
     message = event.message.text
     token = event.reply_token
-    user_id = event.source.user_id
-    if get_member_status(messaging_api, event, logger):
-        members = load_members()
-        logger.info(f"User: {members[user_id]}, message: {message}")
-        show_loading_animation_request = ShowLoadingAnimationRequest(
-            chat_id=user_id, loadingSeconds=5
-        )
-        messaging_api.show_loading_animation(show_loading_animation_request)
-        try:
-            reply_message = ReplyMessageRequest(
-                reply_token=token, 
-                messages=[TextMessage(text=message)]
-            )
-            messaging_api.reply_message(reply_message)
-        except Exception as e:
-            traceback.print_exc()
-            logger.error(f"User: {user_id}, Error: {str(e)}")
-            messaging_api.reply_message(
-                ReplyMessageRequest(
-                    reply_token=token,
-                    messages=[TextMessage(text="Unable to process your request")],
-                )
-            )
+
+    if user_id in authorized_users:
+        reply_text = f"已驗證用戶的消息：{message}"
+    elif user_id in pending_verifications:
+        # 檢查驗證碼
+        if message == pending_verifications[user_id]['code']:
+            authorized_users.add(user_id)
+            del pending_verifications[user_id]
+            reply_text = "驗證成功！你現在可以使用 LINE Bot 了。"
+        else:
+            reply_text = "驗證碼錯誤，請重試。"
+    elif re.match(r"[^@]+@[^@]+\.[^@]+", message):  
+      
+        if is_company_email(message):
+            code = generate_verification_code()
+            pending_verifications[user_id] = {'email': message, 'code': code}
+            send_verification_email(message, code)
+            reply_text = "驗證碼已發送到你的郵箱，請查收並輸入。"
+        else:
+            reply_text = "請使用公司郵箱地址。"
     else:
-        messaging_api.reply_message(
-            ReplyMessageRequest(
-                reply_token=token,
-                messages=[TextMessage(text="You are not a member, please contact the developer.")],
-            )
+        reply_text = "請發送你的公司郵箱地址進行驗證。"
+
+    messaging_api.reply_message(
+        ReplyMessageRequest(
+            reply_token=token,
+            messages=[TextMessage(text=reply_text)]
         )
-        logger.info(f"User: {user_id}, message: {message}")
+    )
 
-# if __name__ == "__main__":
-#     import uvicorn
-
-#     uvicorn.run(router, host="0.0.0.0", port=6000)
+    logger.info(f"User: {user_id}, message: {message}")

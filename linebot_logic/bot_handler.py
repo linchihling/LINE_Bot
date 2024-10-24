@@ -79,7 +79,7 @@ def get_image(machine_name, event):
         logger.info(f"{machine_name} reply latest image: {latest_image}")
         
     elif message == machine_name + "最新影像五張":
-        reply_message = [ImageMessage(original_content_url= url + img, preview_image_url= url + img) for img in latest_5_images]
+        reply_message = [ImageMessage(original_content_url= os.path.join(url, img), preview_image_url= os.path.join(url, img)) for img in latest_5_images]
         logger.info(f"{machine_name} reply latest 5 images: {latest_5_images}")
     
     return ReplyMessageRequest(reply_token=token, messages=reply_message)
