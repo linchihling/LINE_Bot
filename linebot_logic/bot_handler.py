@@ -217,9 +217,12 @@ def show_img(message, token, client_id):
 def handle_text_message(event, messaging_api):
     message = event.message.text
     token = event.reply_token
-    # group_id = event.source.group_id
     client_id = event.source.user_id
-    
+    if hasattr(event.source, "group_id"):
+        group_id = event.source.group_id
+        logger.info(f"Received message from Group ID: {group_id}, User ID: {client_id}. Message: '{message}'")
+    else:
+        logger.info(f"Received message from User ID: {client_id}. Message: '{message}'")
     # loading animation
     show_loading_animation_request = ShowLoadingAnimationRequest(
         chat_id=client_id, loadingSeconds=5

@@ -20,6 +20,7 @@ api_client = ApiClient(configuration=configuration)
 messaging_api = MessagingApi(api_client)
 handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET'))
 webhooks_url = os.getenv('WEBHOOKS_URL_BOT')
+group_id = os.getenv('GROUP_ID')
 
 
 router = APIRouter(
@@ -38,8 +39,6 @@ async def callback(request: Request, x_line_signature: str = Header(None)):
         pass
     return 'OK'
 
-GROUP_ID = "C1bf5730422b6f1cd42eed7ad1359a8f0"
-
 class NotifyRequest(BaseModel):
     rolling_line: str
     message: str
@@ -56,7 +55,7 @@ async def push_message(request_body: NotifyRequest):
         # push
         image_path = f"https://linebot.tunghosteel.com:5003/rl{rolling_line}/{img_path}"
         push_message_request = PushMessageRequest(
-            to=GROUP_ID,
+            to=group_id,
             messages=[
                 TextMessage(text=text_message),
                 ImageMessage(original_content_url=image_path, preview_image_url=image_path),
