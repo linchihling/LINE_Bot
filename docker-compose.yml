@@ -4,6 +4,8 @@ services:
   linebot:
     image: reg.tunghosteel.com/ths_line_bot
     build: .
+    volumes:
+      - "./logs:/bot/logs"
     ports:
       - "6000:6000"
     environment:

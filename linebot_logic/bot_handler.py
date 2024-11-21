@@ -22,7 +22,7 @@ from utils.fetch_url import fetch_folder_links, fetch_image_names, fetch_last_5_
 from utils.member_status import get_member_status, load_members, save_members
 from logger import setup_logger 
 
-logger = setup_logger("test_bot", "logs/test_bot.log")
+logger = setup_logger("ty_bot", "logs/ty_bot.log")
 members = load_members()
 
 machine_dic = {
@@ -49,12 +49,9 @@ def choice_mechine(message, token):
 
     return ReplyMessageRequest(reply_token=token, messages=[FlexMessage(alt_text="機器選擇", contents=bubble)])
 
-
-
 def get_image(machine_name, event):
     message = event.message.text
     token = event.reply_token
-    client_id = event.source.user_id
     
     tz = pytz.timezone('Asia/Taipei')
     now = datetime.now(tz)
@@ -83,8 +80,6 @@ def get_image(machine_name, event):
         logger.info(f"{machine_name} reply latest 5 images: {latest_5_images}")
     
     return ReplyMessageRequest(reply_token=token, messages=reply_message)
-
-
 
 def create_date_menu(message, token):
     if message.startswith("(軋一)"):
@@ -222,9 +217,9 @@ def show_img(message, token, client_id):
 def handle_text_message(event, messaging_api):
     message = event.message.text
     token = event.reply_token
+    # group_id = event.source.group_id
     client_id = event.source.user_id
     
-
     # loading animation
     show_loading_animation_request = ShowLoadingAnimationRequest(
         chat_id=client_id, loadingSeconds=5
