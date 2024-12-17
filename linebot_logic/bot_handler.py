@@ -56,46 +56,7 @@ def choice_mechine(message, token):
             contents=[primary_button, secondary_button]
         )
     )
-
     return ReplyMessageRequest(reply_token=token, messages=[FlexMessage(alt_text="機器選擇", contents=bubble)])
-
-def reply_new_image(messaging_api, event):
-    message = event.message.text
-    machine_name = message[0:4]
-    token = event.reply_token
-    
-    tz = pytz.timezone('Asia/Taipei')
-    now = datetime.now(tz)
-    one_hour_ago = now - timedelta(hours=1)
-    time_range = [one_hour_ago.strftime('%Y%m%d_%H'), now.strftime('%Y%m%d_%H')]
-    
-    url = machine_dic.get(machine_name)["url"]
-    machine = machine_dic.get(machine_name)["machine"]
-
-    latest_5_images = fetch_last_5_images(machine)
-    print(f"{machine_name} successfully fetched the latest 5 images: {latest_5_images}")
-    now_hour = latest_5_images[0].split('/')[0]
-    if now_hour not in time_range:
-        reply_message = [TextMessage(text="一小時內無影像")]
-        handle_result = f"{machine_name} doesn't have any images from the past hour"
-
-    elif message == machine_name + "最新影像":
-        latest_image = latest_5_images[0]
-        img_url = os.path.join(url, latest_image)
-        # latest_image = "20241023_10/2024-10-23_10_01_21_63_900_D25.png"
-        reply_message = [ImageMessage(original_content_url=img_url, preview_image_url=img_url)]
-        handle_result = f"{machine_name} reply latest image: {latest_image}"
-        
-    elif message == machine_name + "最新影像五張":
-        reply_message = [ImageMessage(original_content_url= os.path.join(url, img), preview_image_url= os.path.join(url, img)) for img in latest_5_images]
-        handle_result = f"{machine_name} reply latest 5 images: {latest_5_images}"
-    
-    img = ReplyMessageRequest(reply_token=token, messages=reply_message)
-    messaging_api.reply_message(img)
-    
-    return handle_result
-
-
 
 def create_date_menu(message, token):
     
@@ -216,6 +177,42 @@ def create_imgs_menu(message, token, client_id):
 
     return ReplyMessageRequest(reply_token=token, messages=[FlexMessage(alt_text="Flex Message", contents=carousel)])
 
+def reply_new_image(messaging_api, event):
+    message = event.message.text
+    machine_name = message[0:4]
+    token = event.reply_token
+    
+    tz = pytz.timezone('Asia/Taipei')
+    now = datetime.now(tz)
+    one_hour_ago = now - timedelta(hours=1)
+    time_range = [one_hour_ago.strftime('%Y%m%d_%H'), now.strftime('%Y%m%d_%H')]
+    
+    url = machine_dic.get(machine_name)["url"]
+    machine = machine_dic.get(machine_name)["machine"]
+
+    latest_5_images = fetch_last_5_images(machine)
+    print(f"{machine_name} successfully fetched the latest 5 images: {latest_5_images}")
+    now_hour = latest_5_images[0].split('/')[0]
+    if now_hour not in time_range:
+        reply_message = [TextMessage(text="一小時內無影像")]
+        event_message = f"{machine_name} doesn't have any images from the past hour"
+
+    elif message == machine_name + "最新影像":
+        latest_image = latest_5_images[0]
+        img_url = os.path.join(url, latest_image)
+        # latest_image = "20241023_10/2024-10-23_10_01_21_63_900_D25.png"
+        reply_message = [ImageMessage(original_content_url=img_url, preview_image_url=img_url)]
+        event_message = f"{machine_name} reply latest image: {latest_image}"
+        
+    elif message == machine_name + "最新影像五張":
+        reply_message = [ImageMessage(original_content_url= os.path.join(url, img), preview_image_url= os.path.join(url, img)) for img in latest_5_images]
+        event_message = f"{machine_name} reply latest 5 images: {latest_5_images}"
+    
+    img = ReplyMessageRequest(reply_token=token, messages=reply_message)
+    handle_result = api_reply_message(messaging_api, img, event_message)
+    
+    return handle_result
+
 def reply_image(messaging_api, message, token, client_id):
     date_time_name = message.split(":")[-1]
     date_time_part = date_time_name.split('_')
@@ -227,9 +224,17 @@ def reply_image(messaging_api, message, token, client_id):
     specify_url = os.path.join(url, date_time, date_time_name)
     image_message = [ImageMessage(original_content_url=specify_url, preview_image_url=specify_url)]
     png = ReplyMessageRequest(reply_token=token, messages=image_message)
-    messaging_api.reply_message(png)
-    handle_result = f"User ({client_id}) sent request from URL({specify_url})"
+    event_message = f"User ({client_id}) sent request from URL({specify_url})"
+    handle_result = api_reply_message(messaging_api, png, event_message)
 
+    return handle_result
+
+def api_reply_message(messaging_api, reply_content, event_message=None):
+    try:
+        messaging_api.reply_message(reply_content)
+        handle_result = event_message
+    except Exception as e:
+        handle_result = f'Error: {str(e)}'
     return handle_result
 
 def handle_text_message(event, messaging_api):
@@ -275,22 +280,19 @@ def handle_text_message(event, messaging_api):
                         )
                     ],
                 )
-                messaging_api.reply_message(function_menu)
+                handle_result = api_reply_message(messaging_api, function_menu)
             elif message in ["!最新影像", "!最新影像五張", "!自訂時間影像"]:
                 mechine_menu = choice_mechine(message, token)
-                try:
-                    messaging_api.reply_message(mechine_menu)
-                except Exception as e:
-                    print(f'Error: {str(e)}')
+                handle_result = api_reply_message(messaging_api, mechine_menu)
             elif message.startswith("(軋一)自訂") or message.startswith("(軋二)自訂"):
                 date_menu = create_date_menu(message, token)
-                messaging_api.reply_message(date_menu)
+                handle_result = api_reply_message(messaging_api, date_menu)
             elif message.startswith("!(軋一)影像:") or message.startswith("!(軋二)影像:"):
                 time_menu = create_time_menu(message, token)
-                messaging_api.reply_message(time_menu)
+                handle_result = api_reply_message(messaging_api, time_menu)
             elif message.startswith("!(軋一)搜尋:") or message.startswith("!(軋二)搜尋:"):
                 imgs_menu = create_imgs_menu(message, token, client_id)
-                messaging_api.reply_message(imgs_menu)
+                handle_result = api_reply_message(messaging_api, imgs_menu)
             elif message.startswith("(軋一)最新") or message.startswith("(軋二)最新"):
                 handle_result = reply_new_image(messaging_api,  event)
             elif message.startswith("(軋一)時間") or message.startswith("(軋二)時間"):

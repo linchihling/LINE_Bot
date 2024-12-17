@@ -39,18 +39,12 @@ router = APIRouter(
 )
 
 def limit_error():
-    logger.warning("Too Many Requests")
-    # token = event.reply_token
-    # messaging_api.reply_message(
-    #             ReplyMessageRequest(
-    #                 reply_token=token,
-    #                 messages=[TextMessage(text="Unable to process your request")],
-    #             )
-    #         )
+    logger.warning("Rate limit triggered during LINE webhook")
     return 1
 
+
 @router.post("/line")
-@limiter.limit("10/minute",error_message=limit_error)
+@limiter.limit("2/minute",error_message=limit_error)
 async def callback(request: Request, x_line_signature: str = Header(None)):
     client_ip = get_remote_address(request)
     logger.info(f"Incoming request from IP: {client_ip} - Path: {request.url.path}")
@@ -70,8 +64,8 @@ class NotifyRequest(BaseModel):
 
 
 @router.post("/notify")
-# @limiter.limit("10/hour")
-async def push_message(request_body: NotifyRequest):
+@limiter.limit("10/hour")
+async def push_message(request: Request, request_body: NotifyRequest):
     try:
         # request data
         rolling_line = request_body.rolling_line
@@ -99,6 +93,7 @@ async def push_message(request_body: NotifyRequest):
 def handle_message(event):
     handle_message, handle_result = handle_text_message(event, messaging_api)
     logger.info(f"handle message : {handle_message}")
-    logger.info(handle_result)
+    if handle_result:
+        logger.info(handle_result)
 
 
