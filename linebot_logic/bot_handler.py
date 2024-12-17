@@ -3,7 +3,6 @@ from linebot.v3.messaging import (
     ReplyMessageRequest,
     TextMessage,
     ImageMessage,
-    StickerMessage,
     ShowLoadingAnimationRequest,
     ButtonsTemplate,
     TemplateMessage,
@@ -19,16 +18,27 @@ import pytz
 import os
 
 from utils.fetch_url import fetch_folder_links, fetch_image_names, fetch_last_5_images
-from utils.member_status import get_member_status, load_members, save_members
-from logger import setup_logger 
+from utils.member_status import load_members
 
-logger = setup_logger("ty_bot", "logs/ty_bot.log")
+
 members = load_members()
 
 machine_dic = {
-        "(軋一)":"rl1",
-        "(軋二)":"rl2"
+    "(軋一)": {
+        "machine": "rl1",
+        "url": "https://linebot.tunghosteel.com:5003/rl1/",
+        "name_image": "!(軋一)影像:",
+        "name_search": "!(軋一)搜尋:",
+        "name_time": "(軋一)時間:"
+    },
+    "(軋二)": {
+        "machine": "rl2",
+        "url": "https://linebot.tunghosteel.com:5003/rl2/",
+        "name_image": "!(軋二)影像:",
+        "name_search": "!(軋二)搜尋:",
+        "name_time": "(軋二)時間:"
     }
+}
 def choice_mechine(message, token):
     primary_button = FlexButton(
         style='primary',
@@ -49,8 +59,9 @@ def choice_mechine(message, token):
 
     return ReplyMessageRequest(reply_token=token, messages=[FlexMessage(alt_text="機器選擇", contents=bubble)])
 
-def get_image(machine_name, event):
+def reply_new_image(messaging_api, event):
     message = event.message.text
+    machine_name = message[0:4]
     token = event.reply_token
     
     tz = pytz.timezone('Asia/Taipei')
@@ -58,36 +69,41 @@ def get_image(machine_name, event):
     one_hour_ago = now - timedelta(hours=1)
     time_range = [one_hour_ago.strftime('%Y%m%d_%H'), now.strftime('%Y%m%d_%H')]
     
-    machine = machine_dic.get(machine_name)
-    url = os.path.join("https://linebot.tunghosteel.com:5003/" , machine)
+    url = machine_dic.get(machine_name)["url"]
+    machine = machine_dic.get(machine_name)["machine"]
 
     latest_5_images = fetch_last_5_images(machine)
-    logger.info(f"{machine_name} successfully fetched the latest 5 images: {latest_5_images}")
+    print(f"{machine_name} successfully fetched the latest 5 images: {latest_5_images}")
     now_hour = latest_5_images[0].split('/')[0]
     if now_hour not in time_range:
         reply_message = [TextMessage(text="一小時內無影像")]
-        logger.info(f"{machine_name} doesn't have any images from the past hour")
+        handle_result = f"{machine_name} doesn't have any images from the past hour"
 
     elif message == machine_name + "最新影像":
         latest_image = latest_5_images[0]
         img_url = os.path.join(url, latest_image)
         # latest_image = "20241023_10/2024-10-23_10_01_21_63_900_D25.png"
         reply_message = [ImageMessage(original_content_url=img_url, preview_image_url=img_url)]
-        logger.info(f"{machine_name} reply latest image: {latest_image}")
+        handle_result = f"{machine_name} reply latest image: {latest_image}"
         
     elif message == machine_name + "最新影像五張":
         reply_message = [ImageMessage(original_content_url= os.path.join(url, img), preview_image_url= os.path.join(url, img)) for img in latest_5_images]
-        logger.info(f"{machine_name} reply latest 5 images: {latest_5_images}")
+        handle_result = f"{machine_name} reply latest 5 images: {latest_5_images}"
     
-    return ReplyMessageRequest(reply_token=token, messages=reply_message)
+    img = ReplyMessageRequest(reply_token=token, messages=reply_message)
+    messaging_api.reply_message(img)
+    
+    return handle_result
+
+
 
 def create_date_menu(message, token):
-    if message.startswith("(軋一)"):
-        url = "https://linebot.tunghosteel.com:5003/rl1/"
-        name = "!(軋一)影像:"
-    elif message.startswith("(軋二)"):
-        url = "https://linebot.tunghosteel.com:5003/rl2/"
-        name = "!(軋二)影像:"
+    
+    for key, value in machine_dic.items():
+        if message.startswith(key):
+            url = value["url"]
+            name = value["name_image"]
+            break
 
     folder_links = fetch_folder_links(url)[1:]
     folder_links = [link.split('_')[0] for link in folder_links]
@@ -121,12 +137,11 @@ def create_date_menu(message, token):
     return ReplyMessageRequest(reply_token=token, messages=[FlexMessage(alt_text="Flex Message", contents=carousel)])
 
 def create_time_menu(message, token):
-    if message.startswith("!(軋一)"):
-        url = "https://linebot.tunghosteel.com:5003/rl1/"
-        name = "!(軋一)搜尋:"
-    elif message.startswith("!(軋二)"):
-        url = "https://linebot.tunghosteel.com:5003/rl2/"
-        name = "!(軋二)搜尋:"
+    for key, value in machine_dic.items():
+        if message.startswith("!" + key):
+            url = value["url"]
+            name = value["name_search"]
+            break
 
     folder_links = fetch_folder_links(url)[1:]
     date = message.split(':')[1]
@@ -163,15 +178,14 @@ def create_imgs_menu(message, token, client_id):
 
     search_date = message.split(":")[-1]
     
-    if message.startswith("!(軋一)"):
-        url = "https://linebot.tunghosteel.com:5003/rl1/"
-        name = "(軋一)時間:"
-    elif message.startswith("!(軋二)"):
-        url = "https://linebot.tunghosteel.com:5003/rl2/"
-        name = "(軋二)時間:"
+    for key, value in machine_dic.items():
+        if message.startswith("!" + key):
+            url = value["url"]
+            name = value["name_time"]
+            break
 
     directory_url = url + search_date + '/' 
-    logger.info(f"Client ID: {client_id}, (搜尋)Directory URL: {directory_url}")
+    print(f"Client ID: {client_id}, (搜尋)Directory URL: {directory_url}")
     img_names = fetch_image_names(directory_url)[1:]                                         
     images_list = list({filename.split('_')[2] + '_' + filename.split('_')[2]: filename for filename in img_names}.values())                  # latest img every minutes
 
@@ -202,17 +216,21 @@ def create_imgs_menu(message, token, client_id):
 
     return ReplyMessageRequest(reply_token=token, messages=[FlexMessage(alt_text="Flex Message", contents=carousel)])
 
-def show_img(message, token, client_id):
-    if message.startswith("(軋一)"):
-        url = "https://linebot.tunghosteel.com:5003/rl1/"
-    elif message.startswith("(軋二)"):
-        url = "https://linebot.tunghosteel.com:5003/rl2/"
-
-    specify_url = url + message.split(":")[-1]
-    logger.info(f"User: {client_id}, Directory URL: {specify_url}")
+def reply_image(messaging_api, message, token, client_id):
+    date_time_name = message.split(":")[-1]
+    date_time_part = date_time_name.split('_')
+    date_time = f"{date_time_part[0].replace('-', '')}_{date_time_part[1]}"
+    for key, value in machine_dic.items():
+        if message.startswith(key):
+            url = value["url"]
+            break
+    specify_url = os.path.join(url, date_time, date_time_name)
     image_message = [ImageMessage(original_content_url=specify_url, preview_image_url=specify_url)]
+    png = ReplyMessageRequest(reply_token=token, messages=image_message)
+    messaging_api.reply_message(png)
+    handle_result = f"User ({client_id}) sent request from URL({specify_url})"
 
-    return ReplyMessageRequest(reply_token=token, messages=image_message)
+    return handle_result
 
 def handle_text_message(event, messaging_api):
     message = event.message.text
@@ -220,15 +238,16 @@ def handle_text_message(event, messaging_api):
     client_id = event.source.user_id
     if hasattr(event.source, "group_id"):
         group_id = event.source.group_id
-        logger.info(f"Received message from Group ID: {group_id}, User ID: {client_id}. Message: '{message}'")
+        handle_result = f"Received message from Group ID: {group_id}, User ID: {client_id}. Message: '{message}'"
+        print(f"Received message from Group ID: {group_id}, User ID: {client_id}. Message: '{message}'")
     else:
-        logger.info(f"Received message from User ID: {client_id}. Message: '{message}'")
-    # loading animation
-    show_loading_animation_request = ShowLoadingAnimationRequest(
+        print(f"Received message from User ID: {client_id}. Message: '{message}'")
+
+    show_loading_animation_request = ShowLoadingAnimationRequest(                                                                    # loading animation
         chat_id=client_id, loadingSeconds=5
     )
     messaging_api.show_loading_animation(show_loading_animation_request)
-    # if get_member_status(messaging_api, event, logger):
+
     if message:
         # members = load_members()
         # member = members[client_id]
@@ -257,11 +276,7 @@ def handle_text_message(event, messaging_api):
                     ],
                 )
                 messaging_api.reply_message(function_menu)
-            elif (
-                message == "!最新影像"
-                or message == "!最新影像五張"
-                or message == "!自訂時間影像"
-            ):
+            elif message in ["!最新影像", "!最新影像五張", "!自訂時間影像"]:
                 mechine_menu = choice_mechine(message, token)
                 try:
                     messaging_api.reply_message(mechine_menu)
@@ -276,38 +291,22 @@ def handle_text_message(event, messaging_api):
             elif message.startswith("!(軋一)搜尋:") or message.startswith("!(軋二)搜尋:"):
                 imgs_menu = create_imgs_menu(message, token, client_id)
                 messaging_api.reply_message(imgs_menu)
-            elif message.startswith("(軋一)最新") :
-                img = get_image("(軋一)", event)
-                messaging_api.reply_message(img)
-            elif message.startswith("(軋二)最新") :
-                img = get_image("(軋二)", event)
-                messaging_api.reply_message(img)
+            elif message.startswith("(軋一)最新") or message.startswith("(軋二)最新"):
+                handle_result = reply_new_image(messaging_api,  event)
             elif message.startswith("(軋一)時間") or message.startswith("(軋二)時間"):
-                png = show_img(message, token, client_id)
-                messaging_api.reply_message(png)
+                handle_result = reply_image(messaging_api, message, token, client_id)
+                
+            handle_message = message
         except Exception as e:
             traceback.print_exc()
-            logger.error(f"Error: {str(e)}")
+            handle_result = str(e)
             messaging_api.reply_message(
                 ReplyMessageRequest(
                     reply_token=token,
                     messages=[TextMessage(text="Unable to process your request")],
                 )
             )
-    # else:
-    #     messaging_api.reply_message(
-    #         ReplyMessageRequest(
-    #             reply_token=token,
-    #             messages=[TextMessage(text="You are not a member, please contact the developer.")],
-    #         )
-    #     )
-    #     logger.info(f"User: {client_id}, message: {message}")
+    return handle_message, handle_result
+    
 
-def handle_follow(event, messaging_api):
-    user_id = event.source.user_id
-    sticker_message = StickerMessage(package_id="6370", sticker_id="11088021")
-    messaging_api.push_message(
-        user_id, messages=[TextMessage(text="輸入!開啟功能選單"), sticker_message]
-    )
-    logger.info(f"New follower: {user_id}")
 

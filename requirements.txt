@@ -12,3 +12,4 @@ bs4
 flask_mail
 flask
 pytz
+slowapi
