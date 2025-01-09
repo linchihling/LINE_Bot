@@ -16,25 +16,24 @@ import os
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from linebot_logic.bot_handler import handle_text_message
 from logger import setup_logger 
 
-logger = setup_logger("ty_bot", "logs/ty_bot.log")
+logger = setup_logger("bot_push", "logs/bot_push.log")
 
 # Initialize the LINE API Client
-configuration = Configuration(access_token=os.getenv('LINE_CHANNEL_ACCESS_TOKEN'))
+configuration = Configuration(access_token=os.getenv('LINE_CHANNEL_ACCESS_TOKEN_PUSHBOT'))
 api_client = ApiClient(configuration=configuration)
 messaging_api = MessagingApi(api_client)
-handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET'))
-WEBHOOKS_URL = os.getenv('WEBHOOKS_URL_BOT')
-group_id = os.getenv('GROUP_ID')
+handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET_PUSHBOT'))
+WEBHOOKS_URL = os.getenv('WEBHOOKS_URL_PUSHBOT')
+group_id = os.getenv('GROUP_ID_PUSHBOT')
 
 # Limiter
 limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter(
     prefix=WEBHOOKS_URL,
-    tags=["bot"],
+    tags=["bot_push"],
     responses={404: {"description": "Not found"}}
 )
 
@@ -91,9 +90,10 @@ async def push_message(request: Request, request_body: NotifyRequest):
 
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):
-    handle_message, handle_result = handle_text_message(event, messaging_api)
-    logger.info(f"handle message : {handle_message}")
-    if handle_result:
-        logger.info(handle_result)
+    print(event.message.text)
+    # handle_message, handle_result = handle_text_message(event, messaging_api)
+    # logger.info(f"handle message : {handle_message}")                                                                                                                                                                                                         
+    # if handle_result:
+    #     logger.info(handle_result)
 
 

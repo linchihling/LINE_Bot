@@ -12,6 +12,7 @@ from linebot.v3.messaging import (
     FlexBubble,
     FlexBox,
     FlexButton,
+    StickerMessage,
 )
 from datetime import datetime, timedelta
 import pytz
@@ -310,5 +311,11 @@ def handle_text_message(event, messaging_api):
             )
     return handle_message, handle_result
     
-
+def handle_follow(logger, event, messaging_api):
+    user_id = event.source.user_id
+    sticker_message = StickerMessage(package_id="6370", sticker_id="11088021")
+    messaging_api.push_message(
+        user_id, messages=[TextMessage(text="功能選單觀看即時影像"), sticker_message]
+    )
+    logger.info(f"New follower: {user_id}")
 
