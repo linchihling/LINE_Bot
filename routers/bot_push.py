@@ -26,7 +26,8 @@ api_client = ApiClient(configuration=configuration)
 messaging_api = MessagingApi(api_client)
 handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET_PUSHBOT'))
 WEBHOOKS_URL = os.getenv('WEBHOOKS_URL_PUSHBOT')
-group_id = os.getenv('GROUP_ID_PUSHBOT')
+group_id_push_ty = os.getenv('GROUP_ID_PUSHBOT_TY_SCRAP')
+# group_id_push_project2 = os.getenv('GROUP_ID_PUSHBOT_TEST_PROJECT')
 
 # Limiter
 limiter = Limiter(key_func=get_remote_address)
@@ -62,8 +63,8 @@ class NotifyRequest(BaseModel):
     image_path: str
 
 
-@router.post("/notify")
-@limiter.limit("10/hour")
+@router.post("/notify/ty_scrap")
+@limiter.limit("1/3minute")
 async def push_message(request: Request, request_body: NotifyRequest):
     try:
         # request data
@@ -74,7 +75,7 @@ async def push_message(request: Request, request_body: NotifyRequest):
         # push
         image_path = f"https://linebot.tunghosteel.com:5003/rl{rolling_line}/{img_path}"
         push_message_request = PushMessageRequest(
-            to=group_id,
+            to=group_id_push_ty,
             messages=[
                 TextMessage(text=text_message),
                 ImageMessage(original_content_url=image_path, preview_image_url=image_path),
@@ -88,9 +89,37 @@ async def push_message(request: Request, request_body: NotifyRequest):
     
     return {"message": "Push message sent successfully."}
 
+# @router.post("/notify/project2")
+# @limiter.limit("10/hour")
+# async def push_message(request: Request, request_body: NotifyRequest):
+#     try:
+#         # request data
+#         rolling_line = request_body.rolling_line
+#         text_message = request_body.message
+#         img_path = request_body.image_path
+        
+#         # push
+#         image_path = f"https://linebot.tunghosteel.com:5003/rl{rolling_line}/{img_path}"
+#         push_message_request = PushMessageRequest(
+#             to=group_id_push_project2,
+#             messages=[
+#                 TextMessage(text=text_message),
+#                 ImageMessage(original_content_url=image_path, preview_image_url=image_path),
+#             ]
+#         )
+#         messaging_api.push_message(push_message_request)
+
+#     except Exception as e:
+#         print(f"Error pushing message: {e}")
+#         raise HTTPException(status_code=500, detail="Failed to send push message.")
+    
+#     return {"message": "Push message sent successfully."}
+
+
+
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):
-    print(event.message.text)
+    print(f"------------------------{event.source.group_id}------------------------")
     # handle_message, handle_result = handle_text_message(event, messaging_api)
     # logger.info(f"handle message : {handle_message}")                                                                                                                                                                                                         
     # if handle_result:

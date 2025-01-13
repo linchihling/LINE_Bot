@@ -40,7 +40,7 @@ def limit_error():
 
 
 @router.post("/line")
-@limiter.limit("2/minute",error_message=limit_error)
+@limiter.limit("10/minute",error_message=limit_error)
 async def callback(request: Request, x_line_signature: str = Header(None)):
     client_ip = get_remote_address(request)
     logger.info(f"Incoming request from IP: {client_ip} - Path: {request.url.path}")
