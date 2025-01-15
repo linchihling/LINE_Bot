@@ -64,7 +64,7 @@ class NotifyRequest(BaseModel):
 
 
 @router.post("/notify/ty_scrap")
-@limiter.limit("1/3minute")
+@limiter.limit("10/3minute")
 async def push_message(request: Request, request_body: NotifyRequest):
     try:
         # request data
