@@ -13,6 +13,7 @@ from linebot.v3.messaging import (
 )
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
 import os
+import requests
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -67,13 +68,15 @@ class NotifyRequest(BaseModel):
 @limiter.limit("10/3minute")
 async def push_message(request: Request, request_body: NotifyRequest):
     try:
-        # request data
+        # Request data
         rolling_line = request_body.rolling_line
         text_message = request_body.message
         img_path = request_body.image_path
         
-        # push
+        # Construct image URL
         image_path = f"https://linebot.tunghosteel.com:5003/rl{rolling_line}/{img_path}"
+
+        # Push message to Line
         push_message_request = PushMessageRequest(
             to=group_id_push_ty,
             messages=[
@@ -83,11 +86,46 @@ async def push_message(request: Request, request_body: NotifyRequest):
         )
         messaging_api.push_message(push_message_request)
 
+        # Log success
+        logger.info("Push message sent to Line successfully.")
+
     except Exception as e:
-        print(f"Error pushing message: {e}")
+        logger.info(f"Error pushing message to Line: {e}")
         raise HTTPException(status_code=500, detail="Failed to send push message.")
     
-    return {"message": "Push message sent successfully."}
+    try:
+        # NTFY Notification
+        send_ntfy_notification(image_path)
+
+    except Exception as e:
+        logger.info(f"Error sending NTFY notification: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send ntfy notification.")
+    
+    return {"message": "Notifications sent successfully."}
+
+
+def send_ntfy_notification(image_path: str):
+    """
+    Sends a notification to the NTFY server.
+    """
+    ntfy_url = "https://thstplsu7001.nttp3.ths.com.tw/notify_test"
+    ntfy_message = (
+        f"⚠️ 發生倒料啦!!!\n查看詳情：\n{image_path}"
+    )
+    ntfy_headers = {"Tags": "warning,THS-Warning"}
+    
+    # Post request to NTFY
+    response = requests.post(
+        ntfy_url, data=ntfy_message, headers=ntfy_headers, verify=False
+    )
+    
+    # Check response
+    if response.status_code != 200:
+        raise Exception(f"Failed to send NTFY notification. Status: {response.status_code}")
+    
+    print("NTFY notification sent successfully.")
+
+
 
 # @router.post("/notify/project2")
 # @limiter.limit("10/hour")
