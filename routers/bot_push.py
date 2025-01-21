@@ -17,9 +17,9 @@ import requests
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from logger import setup_logger 
+from setting import setup_logger 
 
-logger = setup_logger("bot_push", "logs/bot_push.log")
+logger = setup_logger("bot_push")
 
 # Initialize the LINE API Client
 configuration = Configuration(access_token=os.getenv('LINE_CHANNEL_ACCESS_TOKEN_PUSHBOT'))
@@ -29,7 +29,7 @@ handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET_PUSHBOT'))
 WEBHOOKS_URL = os.getenv('WEBHOOKS_URL_PUSHBOT')
 group_id_push_ty = os.getenv('GROUP_ID_PUSHBOT_TY_SCRAP')
 # group_id_push_project2 = os.getenv('GROUP_ID_PUSHBOT_TEST_PROJECT')
-
+line_notify_token = os.getenv('LINE_NOTIFY_TOKEN')
 # Limiter
 limiter = Limiter(key_func=get_remote_address)
 
@@ -48,13 +48,13 @@ def limit_error():
 @limiter.limit("2/minute",error_message=limit_error)
 async def callback(request: Request, x_line_signature: str = Header(None)):
     client_ip = get_remote_address(request)
-    logger.info(f"Incoming request from IP: {client_ip} - Path: {request.url.path}")
     body = await request.body()
     try:
         handler.handle(body.decode("utf-8"), x_line_signature)
     except InvalidSignatureError:
         logger.warning(f"Invalid signature from IP: {client_ip}")
         return JSONResponse(status_code=400, content={"error": "Invalid signature"})
+    logger.info(f"Incoming request from IP: {client_ip} - Path: {request.url.path}")
     return {"message": "OK"}
 
 
@@ -93,26 +93,43 @@ async def push_message(request: Request, request_body: NotifyRequest):
         logger.info(f"Error pushing message to Line: {e}")
         raise HTTPException(status_code=500, detail="Failed to send push message.")
     
+    # try:
+    #     # NTFY Notification
+    #     send_ntfy_notification(text_message, image_path)
+
+    # except Exception as e:
+    #     logger.info(f"Error sending NTFY notification: {e}")
+    #     raise HTTPException(status_code=500, detail="Failed to send ntfy notification.")
+    
+    # LINE Notify
     try:
-        # NTFY Notification
-        send_ntfy_notification(image_path)
+        notify_url = 'https://notify-api.line.me/api/notify'
+        headers = {
+            'Authorization': 'Bearer ' + line_notify_token    # 設定權杖
+        }
+        data = {
+            'message': f"{text_message}\n{image_path}"
+        }
+        response = requests.post(notify_url, headers=headers, data=data)
+        if response.status_code == 200:
+            logger.info("Notifications sent successfully.")
+        else:
+            logger.error(f"Failed to send notification: {response.status_code} - {response.text}")
 
     except Exception as e:
-        logger.info(f"Error sending NTFY notification: {e}")
-        raise HTTPException(status_code=500, detail="Failed to send ntfy notification.")
-    
-    return {"message": "Notifications sent successfully."}
+        logger.exception("An error occurred while sending the LINE notification.")
 
 
-def send_ntfy_notification(image_path: str):
+
+def send_ntfy_notification(text_message, image_path: str):
     """
     Sends a notification to the NTFY server.
     """
     ntfy_url = "https://thstplsu7001.nttp3.ths.com.tw/notify_test"
     ntfy_message = (
-        f"⚠️ 發生倒料啦!!!\n查看詳情：\n{image_path}"
+        f"{text_message}\n{image_path}"
     )
-    ntfy_headers = {"Tags": "warning,THS-Warning"}
+    ntfy_headers = {"Tags": "warning,Warning"}
     
     # Post request to NTFY
     response = requests.post(
@@ -123,7 +140,7 @@ def send_ntfy_notification(image_path: str):
     if response.status_code != 200:
         raise Exception(f"Failed to send NTFY notification. Status: {response.status_code}")
     
-    print("NTFY notification sent successfully.")
+    logger.info("NTFY notification sent successfully.")
 
 
 
@@ -153,14 +170,5 @@ def send_ntfy_notification(image_path: str):
     
 #     return {"message": "Push message sent successfully."}
 
-
-
-@handler.add(MessageEvent, message=TextMessageContent)
-def handle_message(event):
-    print(f"------------------------{event.source.group_id}------------------------")
-    # handle_message, handle_result = handle_text_message(event, messaging_api)
-    # logger.info(f"handle message : {handle_message}")                                                                                                                                                                                                         
-    # if handle_result:
-    #     logger.info(handle_result)
 
 

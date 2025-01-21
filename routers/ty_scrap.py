@@ -13,9 +13,9 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 from linebot_logic.ty_scrap_handler import handle_text_message
-from logger import setup_logger 
+from setting import setup_logger 
 
-logger = setup_logger("ty_scrap", "logs/ty_scrap.log")
+logger = setup_logger("ty_scrap")
 
 # Initialize the LINE API Client
 configuration = Configuration(access_token=os.getenv('LINE_CHANNEL_ACCESS_TOKEN_TY_SCRAP'))
@@ -48,9 +48,8 @@ async def callback(request: Request, x_line_signature: str = Header(None)):
     try:
         handler.handle(body.decode("utf-8"), x_line_signature)
     except InvalidSignatureError:
-        logger.warning(f"Invalid signature from IP: {client_ip}")
+        logger.error(f"Invalid signature from IP: {client_ip} - Body: {body.decode('utf-8')}")
         return JSONResponse(status_code=400, content={"error": "Invalid signature"})
-    return {"message": "OK"}
 
 
 @handler.add(MessageEvent, message=TextMessageContent)

@@ -20,7 +20,9 @@ import os
 
 from utils.fetch_url import fetch_folder_links, fetch_image_names, fetch_last_5_images
 from utils.member_status import load_members
+from setting import setup_logger 
 
+logger = setup_logger("ty_scrap")
 
 members = load_members()
 
@@ -245,9 +247,9 @@ def handle_text_message(event, messaging_api):
     if hasattr(event.source, "group_id"):
         group_id = event.source.group_id
         handle_result = f"Received message from Group ID: {group_id}, User ID: {client_id}. Message: '{message}'"
-        print(f"Received message from Group ID: {group_id}, User ID: {client_id}. Message: '{message}'")
+        logger.info(f"Received message from Group ID: {group_id}, User ID: {client_id}. Message: '{message}'")
     else:
-        print(f"Received message from User ID: {client_id}. Message: '{message}'")
+        logger.info(f"Received message from User ID: {client_id}. Message: '{message}'")
 
     show_loading_animation_request = ShowLoadingAnimationRequest(                                                                    # loading animation
         chat_id=client_id, loadingSeconds=5
