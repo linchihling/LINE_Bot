@@ -6,6 +6,7 @@ services:
     build: .
     volumes:
       - "./logs:/bot/logs"
+      - "./ntfy:/bot/ntfy"
     ports:
       - "6000:6000"
     environment:
@@ -20,6 +21,7 @@ services:
       - WEBHOOKS_URL_PUSHBOT=${WEBHOOKS_URL_PUSHBOT}
       - GROUP_ID_PUSHBOT_TY_SCRAP=${GROUP_ID_PUSHBOT_TY_SCRAP}
       - LINE_NOTIFY_TOKEN=${LINE_NOTIFY_TOKEN}
+      - NTFY_TOPIC=${NTFY_TOPIC}
       # - GROUP_ID_PUSHBOT_TEST_PROJECT=${GROUP_ID_PUSHBOT_TEST_PROJECT}
     container_name: line_bot 
     restart: always
