@@ -1,8 +1,9 @@
 import requests
-from utils.image_utils import encode_header
-import logging
 
-logger = logging.getLogger(__name__)
+from utils.image_utils import encode_header
+from utils.setting import setup_logger
+
+logger = setup_logger(__name__)
 
 def send_ntfy_notification(ntfy_topic: str, text_message: str, image_path: str):
     """

@@ -7,7 +7,6 @@ WORKDIR /bot
 COPY . /bot
 
 # ENV PYTHONPATH=.
-# RUN pytest
 
 EXPOSE 6000
 # CMD ["./run.sh"]

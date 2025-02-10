@@ -1,4 +1,7 @@
 import traceback
+import pytz
+import os
+import logging
 from linebot.v3.messaging import (
     ReplyMessageRequest,
     TextMessage,
@@ -15,16 +18,11 @@ from linebot.v3.messaging import (
     StickerMessage,
 )
 from datetime import datetime, timedelta
-import pytz
-import os
 
 from utils.fetch_url import fetch_folder_links, fetch_image_names, fetch_last_5_images
-from utils.member_status import load_members
-from setting import setup_logger 
+from utils.setting import setup_logger
 
-logger = setup_logger("ty_scrap")
-
-members = load_members()
+logger = setup_logger(__name__)
 
 machine_dic = {
     "(軋一)": {
@@ -194,7 +192,6 @@ def reply_new_image(messaging_api, event):
     machine = machine_dic.get(machine_name)["machine"]
 
     latest_5_images = fetch_last_5_images(machine)
-    print(f"{machine_name} successfully fetched the latest 5 images: {latest_5_images}")
     now_hour = latest_5_images[0].split('/')[0]
     if now_hour not in time_range:
         reply_message = [TextMessage(text="一小時內無影像")]
@@ -257,8 +254,6 @@ def handle_text_message(event, messaging_api):
     messaging_api.show_loading_animation(show_loading_animation_request)
 
     if message:
-        # members = load_members()
-        # member = members[client_id]
         try:
             if message == "!" or message == "！":
                 function_menu = ReplyMessageRequest(

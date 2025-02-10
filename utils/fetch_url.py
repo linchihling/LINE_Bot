@@ -2,33 +2,11 @@ import requests
 from bs4 import BeautifulSoup
 from typing import List
 
+from utils.setting import setup_logger
 
+logger = setup_logger(__name__)
 HTML_PARSER = 'html.parser'
 PNG_EXTENSION = '.png'
-
-def fetch_last_image(machine: str) -> List[str]:
-    if machine == "rl1":
-        url = "http://10.224.88.198:8081/get_latest_data"
-    elif machine == "rl2":
-        url = "http://10.224.88.212:8081/get_latest_data"
-    else:
-        return []
-    response = requests.get(url).json()
-    image_path = response[0].get("path").lstrip('/static/images/')
-    # image_path = 20241022_16/2024-10-22_16_51_30_40_1200_D32.png
-    return image_path
-
-def fetch_last_5_images(machine: str) -> List[str]:
-    if machine == "rl1":
-        url = "http://10.224.88.198:8081/get_last_5_images"
-    elif machine == "rl2":
-        url = "http://10.224.88.212:8081/get_last_5_images"
-    else:
-        return []
-    response = requests.get(url).json()
-    images_path = [path.get("path").lstrip('/static/images/') for path in response]
-    
-    return images_path
 
 def fetch_html_soup(url: str) -> BeautifulSoup:
     """
@@ -39,8 +17,27 @@ def fetch_html_soup(url: str) -> BeautifulSoup:
         response.raise_for_status()  
         return BeautifulSoup(response.text, HTML_PARSER)
     except requests.RequestException as e:
-        print(f"Failed to fetch {url}: {e}")
+        logger.error(f"Failed to fetch {url}: {e}")
         return None
+
+def fetch_last_5_images(machine: str) -> List[str]:
+    """
+    從軋一/軋二電腦擷取最新 5 張影像的路徑名稱
+    例如:latest_5_images[0] = "20241023_10/2024-10-23_10_01_21_63_900_D25.png"
+    """
+    if machine == "rl1":
+        url = "http://10.224.88.198:8081/get_last_5_images"
+    elif machine == "rl2":
+        url = "http://10.224.88.212:8081/get_last_5_images"
+    else:
+        return []
+    response = requests.get(url).json()
+    
+    latest_5_images = [path.get("path").lstrip('/static/images/') for path in response]
+    logger.info(f"{machine} successfully fetched the latest 5 images: {latest_5_images}")
+    
+    return latest_5_images
+
 
 def fetch_folder_links(url: str) -> List[str]:
     """
@@ -48,6 +45,7 @@ def fetch_folder_links(url: str) -> List[str]:
     """
     soup = fetch_html_soup(url)
     if soup is None:
+        logger.warning("Failed to retrieve HTML content.")
         return []
     
     folder_links = [link.get('href') for link in soup.find_all('a') if link.get('href').endswith('/')]
@@ -59,25 +57,13 @@ def fetch_image_names(url: str) -> List[str]:
     """
     soup = fetch_html_soup(url)
     if soup is None:
+        logger.warning("Failed to retrieve HTML content.")
         return []
     
     image_names = [link.get('href') for link in soup.find_all('a') if link.get('href')]
     return image_names
 
-def fetch_latest_directory(url: str) -> str:
-    """
-    獲取給定 URL 中最新的資料夾 URL。
-    """
-    soup = fetch_html_soup(url)
-    if soup is None:
-        return ""
-    
-    folder_links = [link.get('href') for link in soup.find_all('a') if link.get('href').endswith('/')]
-    if not folder_links:
-        return ""
-    
-    latest_directory = folder_links[-1]
-    return url + latest_directory
+
 
 def fetch_latest_png_images(directory_url: str, max_images: int = 6) -> List[str]:
     """

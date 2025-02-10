@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Request, Header
 from fastapi.responses import JSONResponse
 from linebot.v3 import WebhookHandler
@@ -8,14 +9,13 @@ from linebot.v3.messaging import (
     MessagingApi,
 )
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
-import os
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 from linebot_logic.ty_scrap_handler import handle_text_message
-from setting import setup_logger 
+from utils.setting import setup_logger
 
-logger = setup_logger("ty_scrap")
+logger = setup_logger(__name__)
 
 # Initialize the LINE API Client
 configuration = Configuration(access_token=os.getenv('LINE_CHANNEL_ACCESS_TOKEN_TY_SCRAP'))

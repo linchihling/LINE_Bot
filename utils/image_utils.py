@@ -1,12 +1,13 @@
-import logging
 import base64
 import requests
 import os
+import datetime
 
+from utils.setting import setup_logger
 
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__)
 
-def download_image(image_url, save_dir):
+def download_image(image_url, project_dir):
     """
     Downloads an image from the given URL and saves it locally.
     
@@ -14,17 +15,20 @@ def download_image(image_url, save_dir):
     :param save_path: The local path to save the image.
     :return: True if download is successful, otherwise False.
     """
-    os.makedirs(save_dir, exist_ok=True)
-    save_path = os.path.join(save_dir,  os.path.basename(image_url))
+    os.makedirs(project_dir, exist_ok=True)
+    # today_date = datetime.datetime.now().strftime("%Y-%m-%d")
+    # save_dir = os.path.join(project_dir, today_date)
+    save_path = os.path.join(project_dir,  os.path.basename(image_url))
     try:
         response = requests.get(image_url, stream=True, verify=False)
         if response.status_code == 200:
             with open(save_path, "wb") as file:
                 for chunk in response.iter_content(1024):
                     file.write(chunk)
+            logger.info(f"Successfully downloaded image: {image_url}")
             return save_path  # Return the saved file path
         else:
-            logger.error(f"Failed to download image: {response.status_code}")
+            logger.error(f"{response.status_code} Failed to download image: {image_url}")
             return None
     except requests.exceptions.RequestException as e:
         logger.error(f"Request error: {e}")

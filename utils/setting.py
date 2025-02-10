@@ -1,17 +1,14 @@
 import logging
 import logging.config
 import yaml
-import os
 
 
-def setup_logger(project_name):
+def setup_logger(name):
     with open('logging.yaml', 'r') as f:
         config = yaml.safe_load(f.read())
-
-        os.environ["PROJECT_NAME"] = project_name
         logging.config.dictConfig(config)
 
-    return logging.getLogger(project_name)
+    return logging.getLogger(name)
 
 # # Elasticsearch
 # from elasticsearch import Elasticsearch

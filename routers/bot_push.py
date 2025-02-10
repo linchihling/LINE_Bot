@@ -1,3 +1,6 @@
+import os
+import requests
+import logging
 from pydantic import BaseModel
 from fastapi import APIRouter, Request, Header, HTTPException
 from fastapi.responses import JSONResponse
@@ -11,16 +14,14 @@ from linebot.v3.messaging import (
     ImageMessage,
     TextMessage
 )
-import os
-import requests
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 from utils.image_utils import download_image
 from utils.ntfy import send_ntfy_notification
-from setting import setup_logger 
+from utils.setting import setup_logger
 
-logger = setup_logger("bot_push")
+logger = setup_logger(__name__)
 
 # Initialize the LINE API Client
 configuration = Configuration(access_token=os.getenv('LINE_CHANNEL_ACCESS_TOKEN_PUSHBOT'))
@@ -90,7 +91,7 @@ async def push_message(request: Request, request_body: NotifyRequest):
             ]
         )
         messaging_api.push_message(push_message_request)
-        logger.info("Push message sent to Line successfully.")
+        logger.info("Successfully pushed message to Line group.")
     
     except Exception as e:
         logger.info(f"Error pushing message to Line: {e}")
@@ -98,10 +99,10 @@ async def push_message(request: Request, request_body: NotifyRequest):
     
     # NTFY Notification
     try:
-        save_dir = "ntfy/ty_scrap"
-        image_path = os.path.join(save_dir,  os.path.basename(image_url))
-        _ = download_image(image_url, save_dir)
+        project_dir = "ntfy/ty_scrap"
+        image_path = download_image(image_url, project_dir)
         send_ntfy_notification(ntfy_topic, text_message, image_path)
+        logger.info("NTFY Notifications sent successfully.")
 
     except Exception as e:
         logger.info(f"Error sending NTFY notification: {e}")
@@ -112,19 +113,19 @@ async def push_message(request: Request, request_body: NotifyRequest):
     try:
         notify_url = 'https://notify-api.line.me/api/notify'
         headers = {
-            'Authorization': 'Bearer ' + line_notify_token    # 設定權杖
+            "Authorization": f"Bearer {line_notify_token}" 
         }
         data = {
-            'message': f"{text_message}\n{image_url}"
+            "message": f"{text_message}\n{image_url}"
         }
+
         response = requests.post(notify_url, headers=headers, data=data)
-        if response.status_code == 200:
-            logger.info("Notifications sent successfully.")
-        else:
-            logger.error(f"Failed to send notification: {response.status_code} - {response.text}")
+        response.raise_for_status()  # 確保請求成功，否則拋出錯誤
+        
+        logger.info("LINE Notify sent successfully.")
 
     except Exception as e:
-        logger.exception("An error occurred while sending the LINE notification.")
+            logger.error(f"Failed to send Line Notify message: {e}")
 
 
 
@@ -158,32 +159,33 @@ async def push_message(request: Request, request_body: NotifyRequest):
 #     return {"message": "Push message sent successfully."}
 
 
-@router.post("/notify/ntfy_test")
-@limiter.limit("100/hour")
-async def push_message(request: Request, request_body: NotifyRequest):
+# @router.post("/notify/ntfy_test")
+# @limiter.limit("100/hour")
+# async def push_message(request: Request, request_body: NotifyRequest):
     
-    try:
-        rolling_line = request_body.rolling_line
-        text_message = request_body.message
-        img_path = request_body.image_path
+#     try:
+#         rolling_line = request_body.rolling_line
+#         text_message = request_body.message
+#         img_path = request_body.image_path
         
-        # image_url = f"https://linebot.tunghosteel.com:5003/rl{rolling_line}/{img_path}"
-        image_url = "https://rm-44.fucosteel.com.vn/images/2024-08-24/F403660106_result.jpg"
-    except Exception as e:
-        print(f"Error request data: {e}")
-        raise HTTPException(status_code=500, detail="Failed to request data.")
+#         image_url = f"https://linebot.tunghosteel.com:5003/rl{rolling_line}/{img_path}"
+#         # image_url = "https://rm-44.fucosteel.com.vn/images/2024-08-24/F403660106_result.jpg"
+#     except Exception as e:
+#         print(f"Error request data: {e}")
+#         raise HTTPException(status_code=500, detail="Failed to request data.")
     
-    # NTFY Notification
-    try:
-        image_path = os.path.join("ntfy", image_url.split("/")[-1])
-        _ = download_image(image_url, image_path)
-        send_ntfy_notification(text_message, image_path)
+#     # NTFY Notification
+#     try:
+#         project_dir = os.path.join("ntfy", "ty_scrap")
+#         # image_path = os.path.join("ntfy", image_url.split("/")[-1])
+#         save_path = download_image(image_url, project_dir)
+#         send_ntfy_notification(ntfy_topic, text_message, save_path)
 
-    except Exception as e:
-        logger.info(f"Error sending NTFY notification: {e}")
-        raise HTTPException(status_code=500, detail="Failed to send ntfy notification.")
+#     except Exception as e:
+#         logger.info(f"Error sending NTFY notification: {e}")
+#         raise HTTPException(status_code=500, detail="Failed to send ntfy notification.")
 
     
     
-    return {"message": "Push message sent successfully."}
+#     return {"message": "Push message sent successfully."}
 
