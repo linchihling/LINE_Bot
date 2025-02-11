@@ -1,7 +1,6 @@
 import traceback
 import pytz
 import os
-import logging
 from linebot.v3.messaging import (
     ReplyMessageRequest,
     TextMessage,
@@ -20,7 +19,7 @@ from linebot.v3.messaging import (
 from datetime import datetime, timedelta
 
 from utils.fetch_url import fetch_folder_links, fetch_image_names, fetch_last_5_images
-from utils.setting import setup_logger
+from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 

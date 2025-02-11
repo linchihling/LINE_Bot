@@ -13,7 +13,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 from linebot_logic.ty_scrap_handler import handle_text_message
-from utils.setting import setup_logger
+from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 

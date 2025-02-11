@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from typing import List
 
-from utils.setting import setup_logger
+from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 HTML_PARSER = 'html.parser'

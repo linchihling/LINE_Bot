@@ -18,7 +18,5 @@ def setup_logger(name):
 # )
 # response = es.index(index=project_name, document=doc)
 
-# # 確認結果
-# print(response)
 
 

@@ -16,10 +16,10 @@ root: #默認情況下配置
 #                 level: INFO
 #                 handlers: [console,info_file_handler,error_file_handler]
 #                 propagate: no
-        # bot_push:
-        #         level: INFO
-        #         handlers: [console,info_file_handler,error_file_handler]
-        #         propagate: no
+#         bot_push:
+#                 level: INFO
+#                 handlers: [console,info_file_handler,error_file_handler]
+#                 propagate: no
  
 handlers:
         console:
