@@ -47,10 +47,11 @@ async def callback(request: Request, x_line_signature: str = Header(None)):
     body = await request.body()
     try:
         handler.handle(body.decode("utf-8"), x_line_signature)
+        return {"message": "OK"}
     except InvalidSignatureError:
         logger.error(f"Invalid signature from IP: {client_ip} - Body: {body.decode('utf-8')}")
         return JSONResponse(status_code=400, content={"error": "Invalid signature"})
-
+    
 
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):

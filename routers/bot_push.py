@@ -16,7 +16,7 @@ from utils.notification import (
     send_to_line_group,
     send_ntfy_notification,
     send_line_notify,
-    NotificationError
+    send_notification
 )
 from utils.logger import setup_logger
 
@@ -76,32 +76,19 @@ async def push_message(request: Request, request_body: NotifyRequest):
         img_path = request_body.image_path
         
         image_url = f"https://linebot.tunghosteel.com:5003/rl{rolling_line}/{img_path}"
+
+        
+        # Push message to Line Group
+        send_notification(send_to_line_group, messaging_api, group_id_push_ty, text_message, image_url)
+
+        # NTFY Notification
+        send_notification(send_ntfy_notification, ntfy_topic, text_message, image_url)
+
+        # LINE Notify
+        send_notification(send_line_notify, line_notify_token, text_message, image_url)
+        
+        return {"status": "success", "message": "Notification sent successfully"}
+
     except Exception as e:
-        print(f"Error request data: {e}")
-        raise HTTPException(status_code=500, detail="Failed to request data.")
-    
-    # Push message to Line Group
-    try:
-        send_to_line_group(messaging_api, group_id_push_ty, text_message, image_url)
-        logger.info("Successfully pushed message to Line group.")
-    except NotificationError as e:
-        error_msg = f"Failed to send Line message: {str(e)}"
-        logger.error(error_msg)
-
-    # NTFY Notification
-    try:
-        send_ntfy_notification(ntfy_topic, text_message, image_url)
-        logger.info("ntfy notification sent successfully.")
-    except NotificationError as e:
-        error_msg = f"Failed to send ntfy notification: {str(e)}"
-        logger.error(error_msg)
-
-    # LINE Notify
-    try:
-        send_line_notify(line_notify_token, text_message, image_url)
-        logger.info("LINE Notify sent successfully.")
-    except NotificationError as e:
-        error_msg = f"Failed to send Line Notify message: {str(e)}"
-        logger.error(error_msg)
-
-
+        logger.error(f"Error in push_message: {str(e)}", exc_info=True)  
+        raise HTTPException(status_code=500, detail="Internal Server Error")

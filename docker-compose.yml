@@ -6,7 +6,6 @@ services:
     build: .
     volumes:
       - "./logs:/bot/logs"
-      - "./ntfy:/bot/ntfy"
     ports:
       - "6000:6000"
     environment:

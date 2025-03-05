@@ -9,7 +9,7 @@ formatters:
  
 root: #默認情況下配置
     level: INFO
-    handlers: [console,info_file_handler,error_file_handler]
+    handlers: [console, info_file_handler, error_file_handler]
  
 # loggers: 
 #         rebar_scrap:
