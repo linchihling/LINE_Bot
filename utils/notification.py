@@ -4,7 +4,9 @@ from linebot.v3.messaging import PushMessageRequest, TextMessage, ImageMessage
 from typing import Optional
 
 from utils.logger import setup_logger
+
 logger = setup_logger(__name__)
+
 
 class NotificationError(Exception):
     """Custom exception for notification-related errors"""
@@ -18,11 +20,9 @@ class NotificationError(Exception):
 def encode_header(value):
     return f"=?utf-8?b?{base64.b64encode(value.encode('utf-8')).decode('utf-8')}?="
 
+
 def send_to_line_group(
-    messaging_api,
-    group_id: str,
-    text_message: str,
-    image_url: Optional[str] = None
+    messaging_api, group_id: str, text_message: str, image_url: Optional[str] = None
 ) -> None:
     """
     Sends a notification to LINE Group with optional image attachment.
@@ -41,24 +41,19 @@ def send_to_line_group(
         if image_url:
             messages.append(
                 ImageMessage(
-                    original_content_url=image_url,
-                    preview_image_url=image_url
+                    original_content_url=image_url, preview_image_url=image_url
                 )
             )
 
-        push_message_request = PushMessageRequest(
-            to=group_id,
-            messages=messages
-        )
+        push_message_request = PushMessageRequest(to=group_id, messages=messages)
         messaging_api.push_message(push_message_request)
 
     except Exception as e:
         raise NotificationError("ty_scrap", str(e)) from e
 
+
 def send_ntfy_notification(
-    ntfy_topic: str,
-    text_message: str,
-    image_url: Optional[str] = None
+    ntfy_topic: str, text_message: str, image_url: Optional[str] = None
 ) -> None:
     """
     Sends a notification to the NTFY server with an optional image attachment.
@@ -72,31 +67,24 @@ def send_ntfy_notification(
         NotificationError: If notification sending fails
     """
     ntfy_url = f"https://thstplsu7001.nttp3.ths.com.tw/{ntfy_topic}"
-    
-    ntfy_headers = {
-        "Title": encode_header(text_message),
-        "Tags": "warning"
-    }
-    
+
+    ntfy_headers = {"Title": encode_header(text_message), "Tags": "warning"}
+
     if image_url:
         ntfy_headers["Attach"] = image_url
 
     try:
         response = requests.post(
-            ntfy_url,
-            headers=ntfy_headers,
-            verify=False,
-            timeout=10
+            ntfy_url, headers=ntfy_headers, verify=False, timeout=10  # nosec B501
         )
         response.raise_for_status()
-        
+
     except requests.exceptions.RequestException as e:
         raise NotificationError("ty_scrap", str(e)) from e
 
+
 def send_line_notify(
-    line_notify_token: str,
-    text_message: str,
-    image_url: Optional[str] = None
+    line_notify_token: str, text_message: str, image_url: Optional[str] = None
 ) -> None:
     """
     Sends a notification to LINE Notify with optional image URL.
@@ -109,35 +97,29 @@ def send_line_notify(
     Raises:
         NotificationError: If notification sending fails
     """
-    notify_url = 'https://notify-api.line.me/api/notify'
-    headers = {
-        "Authorization": f"Bearer {line_notify_token}"
-    }
-    
+    notify_url = "https://notify-api.line.me/api/notify"
+    headers = {"Authorization": f"Bearer {line_notify_token}"}
+
     message = text_message
     if image_url:
         message = f"{text_message}\n{image_url}"
-        
-    data = {
-        "message": message
-    }
+
+    data = {"message": message}
 
     try:
-        response = requests.post(
-            notify_url,
-            headers=headers,
-            data=data,
-            timeout=10
-        )
+        response = requests.post(notify_url, headers=headers, data=data, timeout=10)
         response.raise_for_status()
-        
+
     except requests.exceptions.RequestException as e:
         raise NotificationError("ty_scrap", str(e)) from e
-    
+
+
 def send_notification(send_func, *args):
-        """Generic function to send a notification and handle exceptions."""
-        try:
-            send_func(*args)
-            logger.info(f"{send_func.__name__} sent successfully.")
-        except NotificationError as e:
-            logger.exception(f"Failed to send notification via {send_func.__name__}: {str(e)}")
+    """Generic function to send a notification and handle exceptions."""
+    try:
+        send_func(*args)
+        logger.info(f"{send_func.__name__} sent successfully.")
+    except NotificationError as e:
+        logger.exception(
+            f"Failed to send notification via {send_func.__name__}: {str(e)}"
+        )

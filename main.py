@@ -5,4 +5,3 @@ app = FastAPI()
 
 app.include_router(ty_scrap.router)
 app.include_router(bot_push.router)
-

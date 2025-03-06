@@ -22,9 +22,7 @@ services:
       - LINE_NOTIFY_TOKEN=${LINE_NOTIFY_TOKEN}
       - NTFY_TOPIC=${NTFY_TOPIC}
       # - GROUP_ID_PUSHBOT_TEST_PROJECT=${GROUP_ID_PUSHBOT_TEST_PROJECT}
-    container_name: line_bot 
+    container_name: line_bot
     restart: always
-    
-    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "6000", "--reload"]
 
-    
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "6000", "--reload"]

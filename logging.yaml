@@ -1,26 +1,16 @@
 version: 1
-disable_existing_loggers: no  
+disable_existing_loggers: no
 formatters:
         simple:
                 format: "%(asctime)s [%(name)s]: %(message)s"
         error:
                 format: "%(asctime)s [%(name)s] [%(levelname)s] %(message)s"
 
- 
+
 root: #默認情況下配置
     level: INFO
     handlers: [console, info_file_handler, error_file_handler]
- 
-# loggers: 
-#         rebar_scrap:
-#                 level: INFO
-#                 handlers: [console,info_file_handler,error_file_handler]
-#                 propagate: no
-#         bot_push:
-#                 level: INFO
-#                 handlers: [console,info_file_handler,error_file_handler]
-#                 propagate: no
- 
+
 handlers:
         console:
                 class: logging.StreamHandler
@@ -42,4 +32,4 @@ handlers:
                 filename: ./logs/errors.log
                 maxBytes: 5242880
                 backupCount: 1
-                encoding: utf8    
+                encoding: utf8

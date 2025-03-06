@@ -1,5 +1,6 @@
 stages:
   - build
+  - validate
   - deploy
 
 build:
@@ -10,8 +11,12 @@ build:
 
 deploy:
   stage: deploy
-  only: 
+  only:
     - tags
   script:
     - scp -P 5720 docker-compose.yml s070@10.224.17.96:/srv/services/ths-line-bot/docker-compose.yml
     - ssh -p 5720 s070@10.224.17.96 "cd /srv/services/ths-line-bot && docker compose pull && docker compose up -d"
+
+include:
+    - project: devops/pre-commit
+      file: templates/pre-commit.yml

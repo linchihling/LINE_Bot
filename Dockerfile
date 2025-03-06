@@ -11,4 +11,3 @@ COPY . /bot
 EXPOSE 6000
 # CMD ["./run.sh"]
 # CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "6000", "--reload"]
-

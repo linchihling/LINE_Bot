@@ -5,20 +5,22 @@ from typing import List
 from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
-HTML_PARSER = 'html.parser'
-PNG_EXTENSION = '.png'
+HTML_PARSER = "html.parser"
+PNG_EXTENSION = ".png"
+
 
 def fetch_html_soup(url: str) -> BeautifulSoup:
     """
     發送請求並返回解析後的 BeautifulSoup 對象。
     """
     try:
-        response = requests.get(url, verify=False)
-        response.raise_for_status()  
+        response = requests.get(url, verify=False, timeout=10)  # nosec B501
+        response.raise_for_status()
         return BeautifulSoup(response.text, HTML_PARSER)
     except requests.RequestException as e:
         logger.error(f"Failed to fetch {url}: {e}")
         return None
+
 
 def fetch_last_5_images(machine: str) -> List[str]:
     """
@@ -31,11 +33,13 @@ def fetch_last_5_images(machine: str) -> List[str]:
         url = "http://10.224.88.212:8081/get_last_5_images"
     else:
         return []
-    response = requests.get(url).json()
-    
-    latest_5_images = [path.get("path").lstrip('/static/images/') for path in response]
-    logger.info(f"{machine} successfully fetched the latest 5 images: {latest_5_images}")
-    
+    response = requests.get(url, timeout=10).json()
+
+    latest_5_images = [path.get("path").lstrip("/static/images/") for path in response]
+    logger.info(
+        f"{machine} successfully fetched the latest 5 images: {latest_5_images}"
+    )
+
     return latest_5_images
 
 
@@ -47,9 +51,14 @@ def fetch_folder_links(url: str) -> List[str]:
     if soup is None:
         logger.warning("Failed to retrieve HTML content.")
         return []
-    
-    folder_links = [link.get('href') for link in soup.find_all('a') if link.get('href').endswith('/')]
+
+    folder_links = [
+        link.get("href")
+        for link in soup.find_all("a")
+        if link.get("href").endswith("/")
+    ]
     return folder_links
+
 
 def fetch_image_names(url: str) -> List[str]:
     """
@@ -59,10 +68,9 @@ def fetch_image_names(url: str) -> List[str]:
     if soup is None:
         logger.warning("Failed to retrieve HTML content.")
         return []
-    
-    image_names = [link.get('href') for link in soup.find_all('a') if link.get('href')]
-    return image_names
 
+    image_names = [link.get("href") for link in soup.find_all("a") if link.get("href")]
+    return image_names
 
 
 def fetch_latest_png_images(directory_url: str, max_images: int = 6) -> List[str]:
@@ -72,9 +80,11 @@ def fetch_latest_png_images(directory_url: str, max_images: int = 6) -> List[str
     soup = fetch_html_soup(directory_url)
     if soup is None:
         return []
-    
-    png_links = [link.get('href') for link in soup.find_all('a') if link.get('href').endswith(PNG_EXTENSION)]
+
+    png_links = [
+        link.get("href")
+        for link in soup.find_all("a")
+        if link.get("href").endswith(PNG_EXTENSION)
+    ]
     latest_png_links = png_links[-max_images:]
     return [directory_url + img for img in latest_png_links]
-
-
