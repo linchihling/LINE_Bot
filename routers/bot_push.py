@@ -73,13 +73,13 @@ class NotifyRequest(BaseModel):
 @router.post("/notify/ty_scrap")
 @limiter.limit("10/3minute")
 async def push_message(request: Request, request_body: NotifyRequest):
+    logger.info(f"Received request: {await request.json()}")
+    rolling_line = request_body.rolling_line
+    text_message = request_body.message
+    img_path = request_body.image_path
+
+    image_url = f"https://linebot.tunghosteel.com:5003/rl{rolling_line}/{img_path}"
     try:
-        rolling_line = request_body.rolling_line
-        text_message = request_body.message
-        img_path = request_body.image_path
-
-        image_url = f"https://linebot.tunghosteel.com:5003/rl{rolling_line}/{img_path}"
-
         # Push message to Line Group
         send_notification(
             send_to_line_group, messaging_api, group_id_push_ty, text_message, image_url

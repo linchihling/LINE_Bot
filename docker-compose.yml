@@ -26,3 +26,14 @@ services:
     restart: always
 
     command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "6000", "--reload"]
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.12.0
+    volumes:
+      - "./logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro"
+      - "./logs:/var/log/linebot:ro"
+    environment:
+      - "TZ=Asia/Taipei"
+    container_name: logstash
+    restart: always
+    depends_on:
+      - linebot
