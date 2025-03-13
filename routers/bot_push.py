@@ -66,10 +66,10 @@ async def callback(request: Request, x_line_signature: str = Header(None)):
     return {"message": "OK"}
 
 
-# @handler.add(MessageEvent, message=TextMessageContent)
-# def handle_message(event):
-#     group_id = event.source.group_id
-#     logger.info(f"group_id : {group_id}")
+@handler.add(MessageEvent, message=TextMessageContent)
+def handle_message(event):
+    group_id = event.source.group_id
+    logger.info(f"group_id : {group_id}")
 
 
 class NotifyRequest(BaseModel):
