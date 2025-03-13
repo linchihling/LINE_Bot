@@ -33,6 +33,7 @@ services:
       - "./logs:/var/log/linebot:ro"
     environment:
       - "TZ=Asia/Taipei"
+      - "config.reload.automatic=true"
     container_name: logstash
     restart: always
     depends_on:

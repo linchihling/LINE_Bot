@@ -15,7 +15,7 @@ from slowapi.util import get_remote_address
 from linebot_logic.ty_scrap_handler import handle_text_message
 from utils.logger import setup_logger
 
-logger = setup_logger(__name__)
+logger = setup_logger(__name__, "ty_scrap")
 
 # Initialize the LINE API Client
 configuration = Configuration(

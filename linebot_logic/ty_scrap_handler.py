@@ -21,7 +21,7 @@ from datetime import datetime, timedelta
 from utils.fetch_url import fetch_folder_links, fetch_image_names, fetch_last_5_images
 from utils.logger import setup_logger
 
-logger = setup_logger(__name__)
+logger = setup_logger(__name__, "ty_scrap")
 
 machine_dic = {
     "(軋一)": {

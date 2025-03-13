@@ -5,7 +5,7 @@ from typing import Optional
 
 from utils.logger import setup_logger
 
-logger = setup_logger(__name__)
+logger_ty_scrap = setup_logger(__name__, "ty_scrap")
 
 
 class NotificationError(Exception):
@@ -118,8 +118,11 @@ def send_notification(send_func, *args):
     """Generic function to send a notification and handle exceptions."""
     try:
         send_func(*args)
-        logger.info(f"{send_func.__name__} sent successfully.")
+        logger_ty_scrap.info(f"{send_func.__name__} sent successfully.")
     except NotificationError as e:
-        logger.exception(
-            f"Failed to send notification via {send_func.__name__}: {str(e)}"
-        )
+        if "invalid_token" in str(e):
+            logger_ty_scrap.error("Authentication failed: Invalid or expired token.")
+        else:
+            logger_ty_scrap.exception(
+                f"Failed to send notification via {send_func.__name__}: {str(e)}"
+            )
