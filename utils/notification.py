@@ -5,17 +5,6 @@ from typing import Optional
 
 from utils.logger import setup_logger
 
-logger_ty_scrap = setup_logger(__name__, "ty_scrap")
-
-
-class NotificationError(Exception):
-    """Custom exception for notification-related errors"""
-
-    def __init__(self, project_name, message):
-        self.project_name = project_name
-        self.message = message
-        super().__init__(f"[{self.project_name}] {self.message}")
-
 
 def encode_header(value):
     return f"=?utf-8?b?{base64.b64encode(value.encode('utf-8')).decode('utf-8')}?="
@@ -33,8 +22,6 @@ def send_to_line_group(
         text_message (str): Message to be sent
         image_url (str, optional): URL of the image to be sent
 
-    Raises:
-        NotificationError: If message sending fails
     """
     try:
         messages = [TextMessage(text=text_message)]
@@ -49,7 +36,7 @@ def send_to_line_group(
         messaging_api.push_message(push_message_request)
 
     except Exception as e:
-        raise NotificationError("ty_scrap", str(e)) from e
+        raise Exception(str(e))
 
 
 def send_ntfy_notification(
@@ -63,8 +50,6 @@ def send_ntfy_notification(
         text_message (str): The message to be sent
         image_url (str, optional): URL of image file
 
-    Raises:
-        NotificationError: If notification sending fails
     """
     ntfy_url = f"https://thstplsu7001.nttp3.ths.com.tw/{ntfy_topic}"
 
@@ -80,7 +65,7 @@ def send_ntfy_notification(
         response.raise_for_status()
 
     except requests.exceptions.RequestException as e:
-        raise NotificationError("ty_scrap", str(e)) from e
+        raise Exception(str(e))
 
 
 def send_line_notify(
@@ -94,8 +79,6 @@ def send_line_notify(
         text_message (str): Message to be sent
         image_url (str, optional): URL of image to be attached
 
-    Raises:
-        NotificationError: If notification sending fails
     """
     notify_url = "https://notify-api.line.me/api/notify"
     headers = {"Authorization": f"Bearer {line_notify_token}"}
@@ -111,18 +94,14 @@ def send_line_notify(
         response.raise_for_status()
 
     except requests.exceptions.RequestException as e:
-        raise NotificationError("ty_scrap", str(e)) from e
+        raise Exception(str(e))
 
 
-def send_notification(send_func, *args):
+def send_notification(project_name, send_func, *args):
     """Generic function to send a notification and handle exceptions."""
+    logger = setup_logger(__name__, project_name)
     try:
         send_func(*args)
-        logger_ty_scrap.info(f"{send_func.__name__} sent successfully.")
-    except NotificationError as e:
-        if "invalid_token" in str(e):
-            logger_ty_scrap.error("Authentication failed: Invalid or expired token.")
-        else:
-            logger_ty_scrap.exception(
-                f"Failed to send notification via {send_func.__name__}: {str(e)}"
-            )
+        logger.info(f"{send_func.__name__} sent successfully.")
+    except Exception as e:
+        logger.error(f"Failed to send notification via {send_func.__name__}: {str(e)}")

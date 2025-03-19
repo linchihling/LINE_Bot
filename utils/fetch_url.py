@@ -14,7 +14,7 @@ def fetch_html_soup(url: str) -> BeautifulSoup:
     發送請求並返回解析後的 BeautifulSoup 對象。
     """
     try:
-        response = requests.get(url, verify=False, timeout=10)  # nosec B501
+        response = requests.get(url, timeout=10)
         response.raise_for_status()
         return BeautifulSoup(response.text, HTML_PARSER)
     except requests.RequestException as e:
@@ -28,9 +28,9 @@ def fetch_last_5_images(machine: str) -> List[str]:
     例如:latest_5_images[0] = "20241023_10/2024-10-23_10_01_21_63_900_D25.png"
     """
     if machine == "rl1":
-        url = "http://10.224.88.198:8081/get_last_5_images"
+        url = "https://rebar-detection-sec1-ty.tunghosteel.com/get_last_5_images"
     elif machine == "rl2":
-        url = "http://10.224.88.212:8081/get_last_5_images"
+        url = "https://rebar-detection-sec2-ty.tunghosteel.com/get_last_5_images"
     else:
         return []
     response = requests.get(url, timeout=10).json()
