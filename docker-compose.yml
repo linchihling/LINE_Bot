@@ -34,8 +34,13 @@ services:
       - "./logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro"
       - "./logs:/var/log/linebot:ro"
     environment:
-      - "TZ=Asia/Taipei"
-      - "config.reload.automatic=true"
+      LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:-}
+      XPACK_MONITORING_ENABLED: "false"
+      # - "TZ=Asia/Taipei"
+      # - "config.reload.automatic=true"
+    ports:
+      - 5044:5044
+      - 50000:50000/tcp
     container_name: logstash
     restart: always
     depends_on:

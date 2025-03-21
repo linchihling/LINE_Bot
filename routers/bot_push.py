@@ -1,4 +1,5 @@
 import os
+import time
 from pydantic import BaseModel
 from fastapi import APIRouter, Request, Header, HTTPException
 from fastapi.responses import JSONResponse
@@ -75,7 +76,7 @@ def handle_message(event):
     message = event.message.text
     token = event.reply_token
     group_id = event.source.group_id
-    if message == "GROUP ID":
+    if message == "!GROUP ID":
         messaging_api.reply_message(
             ReplyMessageRequest(
                 reply_token=token,
@@ -139,7 +140,8 @@ async def push_message_water_spray(
 
     logger_water_spray.info(f"Received request: {await request.json()}")
     text_message = request_body.message
-    image_url = "https://linebot.tunghosteel.com:5003/water_spray"
+    date_time = time.time()
+    image_url = f"https://linebot.tunghosteel.com:5003/water_spray?{date_time}"
     try:
         # Push message to Line Group
         send_notification(
