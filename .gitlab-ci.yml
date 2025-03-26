@@ -5,12 +5,16 @@ stages:
 
 build:
   stage: build
+  tags:
+    - shell
   script:
     - docker compose build
     - docker compose push
 
 deploy:
   stage: deploy
+  tags:
+    - shell
   only:
     - tags
   script:
