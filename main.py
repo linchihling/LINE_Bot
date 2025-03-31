@@ -5,7 +5,7 @@ from slowapi.errors import RateLimitExceeded
 from routers import bot_push, ty_scrap
 from utils.logger import setup_logger
 
-logger = setup_logger(__name__, "app")
+logger = setup_logger(__name__)
 app = FastAPI()
 
 app.include_router(ty_scrap.router)
@@ -15,7 +15,12 @@ app.include_router(bot_push.router)
 # 422 Request Validation Error
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    logger.error(f"422 Unprocessable Entity: {exc.errors()}", exc_info=False)
+    logger.error(
+        "422 Request Validation Error",
+        exc_info=False,
+        extra={"project": request.client.host},
+    )
+    print(exc.errors())
 
     return JSONResponse(
         status_code=422,
@@ -26,7 +31,9 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 # 429 Too Many Requests
 @app.exception_handler(RateLimitExceeded)
 async def ratelimit_exception_handler(request: Request, exc: RateLimitExceeded):
-    logger.error(f"429 Too Many Requests from {request.client.host}", exc_info=False)
+    logger.error(
+        "429 Too Many Requests", exc_info=False, extra={"project": request.client.host}
+    )
     return JSONResponse(
         status_code=429,
         content={"detail": "Too many requests. Please try again later."},

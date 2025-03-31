@@ -5,6 +5,8 @@ from typing import Optional
 
 from utils.logger import setup_logger
 
+logger = setup_logger(__name__)
+
 
 def encode_header(value):
     return f"=?utf-8?b?{base64.b64encode(value.encode('utf-8')).decode('utf-8')}?="
@@ -99,9 +101,13 @@ def send_line_notify(
 
 def send_notification(project_name, send_func, *args):
     """Generic function to send a notification and handle exceptions."""
-    logger = setup_logger(__name__, project_name)
     try:
         send_func(*args)
-        logger.info(f"{send_func.__name__} sent successfully.")
+        logger.info(
+            f"{send_func.__name__} sent successfully.", extra={"project": project_name}
+        )
     except Exception as e:
-        logger.error(f"Failed to send notification via {send_func.__name__}: {str(e)}")
+        logger.error(
+            f"Failed to send notification via {send_func.__name__}: {str(e)}",
+            extra={"project": project_name},
+        )

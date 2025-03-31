@@ -7,8 +7,6 @@ from linebot.v3 import WebhookHandler
 from linebot.v3.webhooks import MessageEvent, TextMessageContent  # noqa F401
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging import (
-    ReplyMessageRequest,
-    TextMessage,
     Configuration,
     ApiClient,
     MessagingApi,
@@ -24,9 +22,7 @@ from utils.notification import (
 )
 from utils.logger import setup_logger
 
-logger = setup_logger(__name__, "line")
-logger_ty_scrap = setup_logger(__name__, "ty_scrap")
-logger_water_spray = setup_logger(__name__, "water_spray")
+logger = setup_logger(__name__)
 
 # Initialize the LINE API Client
 configuration = Configuration(
@@ -37,10 +33,14 @@ messaging_api = MessagingApi(api_client)
 handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET_PUSHBOT"))
 WEBHOOKS_URL = os.getenv("WEBHOOKS_URL_PUSHBOT")
 group_id_push_ty = os.getenv("GROUP_ID_PUSHBOT_TY_SCRAP")
-group_id_push_water_spray = os.getenv("GROUP_ID_PUSHBOT_TY_WATER_SPRAY")
+group_id_ty_water_spray = os.getenv("GROUP_ID_PUSHBOT_TY_WATER_SPRAY")
+group_id_ty_spark_detection = os.getenv("GROUP_ID_PUSHBOT_TY_SPARK_DETECTION")
+group_id_ty_dust_detection = os.getenv("GROUP_ID_PUSHBOT_TY_DUST_DETECTION")
 line_notify_token = os.getenv("LINE_NOTIFY_TOKEN")
 ntfy_ty_scrap = os.getenv("NTFY_TY_SCRAP")
-ntfy_water_spray = os.getenv("NTFY_WATER_SPRAY")
+ntfy_ty_water_spray = os.getenv("NTFY_TY_WATER_SPRAY")
+ntfy_ty_spark_detection = os.getenv("NTFY_TY_SPARK_DETECTION")
+ntfy_ty_dust_detection = os.getenv("NTFY_TY_DUST_DETECTION")
 
 # Limiter
 limiter = Limiter(key_func=get_remote_address)
@@ -53,7 +53,9 @@ router = APIRouter(
 
 
 def limit_error():
-    logger.warning("Rate limit triggered during LINE webhook")
+    logger.warning(
+        "Rate limit triggered during LINE webhook", extra={"project": "line"}
+    )
     return 1
 
 
@@ -65,23 +67,22 @@ async def callback(request: Request, x_line_signature: str = Header(None)):
     try:
         handler.handle(body.decode("utf-8"), x_line_signature)
     except InvalidSignatureError:
-        logger.warning(f"Invalid signature from IP: {client_ip}")
+        logger.warning(
+            f"Invalid signature from IP: {client_ip}", extra={"project": "line"}
+        )
         return JSONResponse(status_code=400, content={"error": "Invalid signature"})
-    logger.info(f"Incoming request from IP: {client_ip} - Path: {request.url.path}")
+    # logger.info(f"Incoming request from IP: {client_ip} - Path: {request.url.path}")
     return {"message": "OK"}
 
 
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):
     message = event.message.text
-    token = event.reply_token
     group_id = event.source.group_id
-    if message == "!GROUP ID":
-        messaging_api.reply_message(
-            ReplyMessageRequest(
-                reply_token=token,
-                messages=[TextMessage(text=f"{group_id}")],
-            )
+    if message == "(系統測試，請忽略)":
+        logger.info(
+            f"Replied with Group ID: {group_id} (from {event.source.user_id})",
+            extra={"project": "line"},
         )
 
 
@@ -91,14 +92,16 @@ class NotifyRequest_ty_scrap(BaseModel):
     image_path: str
 
 
-class NotifyRequest_water_spray(BaseModel):
+class NotifyRequest_message(BaseModel):
     message: str
 
 
 @router.post("/notify/ty_scrap")
-@limiter.limit("10/3minute")
+@limiter.limit("3/3minute")
 async def push_message(request: Request, request_body: NotifyRequest_ty_scrap):
-    logger_ty_scrap.info(f"Received request: {await request.json()}")
+    logger.info(
+        f"Received request: {await request.json()}", extra={"project": "ty_scrap"}
+    )
     rolling_line = request_body.rolling_line
     text_message = request_body.message
     img_path = request_body.image_path
@@ -128,17 +131,23 @@ async def push_message(request: Request, request_body: NotifyRequest_ty_scrap):
         return {"status": "success", "message": "Notification sent successfully"}
 
     except Exception as e:
-        logger_ty_scrap.error(f"Error in push_message: {str(e)}", exc_info=True)
+        logger.error(
+            f"Error in push_message: {str(e)}",
+            exc_info=True,
+            extra={"project": "ty_scrap"},
+        )
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
 @router.post("/notify/water_spray")
 @limiter.limit("10/3minute")
 async def push_message_water_spray(
-    request: Request, request_body: NotifyRequest_water_spray
+    request: Request, request_body: NotifyRequest_message
 ):
 
-    logger_water_spray.info(f"Received request: {await request.json()}")
+    logger.info(
+        f"Received request: {await request.json()}", extra={"project": "water_spray"}
+    )
     text_message = request_body.message
     date_time = time.time()
     image_url = f"https://linebot.tunghosteel.com:5003/water_spray?{date_time}"
@@ -148,7 +157,7 @@ async def push_message_water_spray(
             "water_spray",
             send_to_line_group,
             messaging_api,
-            group_id_push_water_spray,
+            group_id_ty_water_spray,
             text_message,
             image_url,
         )
@@ -156,12 +165,99 @@ async def push_message_water_spray(
         send_notification(
             "water_spray",
             send_ntfy_notification,
-            ntfy_water_spray,
+            ntfy_ty_water_spray,
             text_message,
             image_url,
         )
         return {"status": "success", "message": "Notification sent successfully"}
 
     except Exception as e:
-        logger_water_spray.error(f"Error in push_message: {str(e)}", exc_info=True)
+        logger.error(
+            f"Error in push_message: {str(e)}",
+            exc_info=True,
+            extra={"project": "water_spray"},
+        )
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
+@router.post("/notify/spark_detection")
+@limiter.limit("10/3minute")
+async def push_message_spark_detection(
+    request: Request, request_body: NotifyRequest_message
+):
+
+    logger.info(
+        f"Received request: {await request.json()}",
+        extra={"project": "spark_detection"},
+    )
+    text_message = request_body.message
+    date_time = time.time()
+    image_url = f"https://linebot.tunghosteel.com:5003/spark_detection?{date_time}"
+    try:
+        # Push message to Line Group
+        send_notification(
+            "spark_detection",
+            send_to_line_group,
+            messaging_api,
+            group_id_ty_spark_detection,
+            text_message,
+            image_url,
+        )
+        # NTFY Notification
+        send_notification(
+            "spark_detection",
+            send_ntfy_notification,
+            ntfy_ty_spark_detection,
+            text_message,
+            image_url,
+        )
+        return {"status": "success", "message": "Notification sent successfully"}
+
+    except Exception as e:
+        logger.error(
+            f"Error in push_message: {str(e)}",
+            exc_info=True,
+            extra={"project": "spark_detection"},
+        )
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
+@router.post("/notify/dust_detection_150")
+@limiter.limit("10/3minute")
+async def push_message_dust_detection(
+    request: Request, request_body: NotifyRequest_message
+):
+
+    logger.info(
+        f"Received request: {await request.json()}", extra={"project": "dust_detection"}
+    )
+    text_message = request_body.message
+    date_time = time.time()
+    image_url = f"https://linebot.tunghosteel.com:5003/water_spray?{date_time}"
+    try:
+        # Push message to Line Group
+        send_notification(
+            "dust_detection",
+            send_to_line_group,
+            messaging_api,
+            group_id_ty_dust_detection,
+            text_message,
+            image_url,
+        )
+        # NTFY Notification
+        send_notification(
+            "dust_detection",
+            send_ntfy_notification,
+            ntfy_ty_dust_detection,
+            text_message,
+            image_url,
+        )
+        return {"status": "success", "message": "Notification sent successfully"}
+
+    except Exception as e:
+        logger.error(
+            f"Error in push_message: {str(e)}",
+            exc_info=True,
+            extra={"project": "dust_detection"},
+        )
         raise HTTPException(status_code=500, detail="Internal Server Error")

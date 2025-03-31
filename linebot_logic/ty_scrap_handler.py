@@ -21,7 +21,7 @@ from datetime import datetime, timedelta
 from utils.fetch_url import fetch_folder_links, fetch_image_names, fetch_last_5_images
 from utils.logger import setup_logger
 
-logger = setup_logger(__name__, "ty_scrap")
+logger = setup_logger(__name__)
 
 machine_dic = {
     "(軋一)": {
@@ -267,9 +267,15 @@ def handle_text_message(event, messaging_api):
         handle_result = (
             f"Received message from Group ID: {group_id}. Message: '{message}'"
         )
-        logger.info(f"Received message from Group ID: {group_id}. Message: '{message}'")
+        logger.info(
+            f"Received message from Group ID: {group_id}. Message: '{message}'",
+            extra={"project": "ty_scrap"},
+        )
     else:
-        logger.info(f"Received message from User ID: {client_id}. Message: '{message}'")
+        logger.info(
+            f"Received message from User ID: {client_id}. Message: '{message}'",
+            extra={"project": "ty_scrap"},
+        )
 
     show_loading_animation_request = ShowLoadingAnimationRequest(  # loading animation
         chat_id=client_id, loadingSeconds=5
@@ -345,4 +351,4 @@ def handle_follow(logger, event, messaging_api):
     messaging_api.push_message(
         user_id, messages=[TextMessage(text="功能選單觀看即時影像"), sticker_message]
     )
-    logger.info(f"New follower: {user_id}")
+    logger.info(f"New follower: {user_id}", extra={"project": "ty_scrap"})

@@ -4,7 +4,7 @@ from typing import List
 
 from utils.logger import setup_logger
 
-logger_ty_scrap = setup_logger(__name__, "ty_scrap")
+logger = setup_logger(__name__)
 HTML_PARSER = "html.parser"
 PNG_EXTENSION = ".png"
 
@@ -18,7 +18,7 @@ def fetch_html_soup(url: str) -> BeautifulSoup:
         response.raise_for_status()
         return BeautifulSoup(response.text, HTML_PARSER)
     except requests.RequestException as e:
-        logger_ty_scrap.error(f"Failed to fetch {url}: {e}")
+        logger.error(f"Failed to fetch {url}: {e}", extra={"project": "fetch_folder"})
         return None
 
 
@@ -36,8 +36,9 @@ def fetch_last_5_images(machine: str) -> List[str]:
     response = requests.get(url, timeout=10).json()
 
     latest_5_images = [path.get("path").lstrip("/static/images/") for path in response]
-    logger_ty_scrap.info(
-        f"{machine} successfully fetched the latest 5 images: {latest_5_images}"
+    logger.info(
+        f"{machine} successfully fetched the latest 5 images: {latest_5_images}",
+        extra={"project": "fetch_folder"},
     )
 
     return latest_5_images
@@ -49,7 +50,9 @@ def fetch_folder_links(url: str) -> List[str]:
     """
     soup = fetch_html_soup(url)
     if soup is None:
-        logger_ty_scrap.warning("Failed to retrieve HTML content.")
+        logger.warning(
+            "Failed to retrieve HTML content.", extra={"project": "fetch_folder"}
+        )
         return []
 
     folder_links = [
@@ -66,7 +69,9 @@ def fetch_image_names(url: str) -> List[str]:
     """
     soup = fetch_html_soup(url)
     if soup is None:
-        logger_ty_scrap.warning("Failed to retrieve HTML content.")
+        logger.warning(
+            "Failed to retrieve HTML content.", extra={"project": "fetch_image"}
+        )
         return []
 
     image_names = [link.get("href") for link in soup.find_all("a") if link.get("href")]

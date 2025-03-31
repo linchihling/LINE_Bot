@@ -15,7 +15,7 @@ from slowapi.util import get_remote_address
 from linebot_logic.ty_scrap_handler import handle_text_message
 from utils.logger import setup_logger
 
-logger = setup_logger(__name__, "ty_scrap")
+logger = setup_logger(__name__)
 
 # Initialize the LINE API Client
 configuration = Configuration(
@@ -38,7 +38,9 @@ router = APIRouter(
 
 
 def limit_error():
-    logger.warning("Rate limit triggered during LINE webhook")
+    logger.warning(
+        "Rate limit triggered during LINE webhook", extra={"project": "ty_scrap"}
+    )
     return 1
 
 
@@ -46,14 +48,18 @@ def limit_error():
 @limiter.limit("10/minute", error_message=limit_error)
 async def callback(request: Request, x_line_signature: str = Header(None)):
     client_ip = get_remote_address(request)
-    logger.info(f"Incoming request from IP: {client_ip} - Path: {request.url.path}")
+    logger.info(
+        f"Incoming request from IP: {client_ip} - Path: {request.url.path}",
+        extra={"project": "ty_scrap"},
+    )
     body = await request.body()
     try:
         handler.handle(body.decode("utf-8"), x_line_signature)
         return {"message": "OK"}
     except InvalidSignatureError:
         logger.error(
-            f"Invalid signature from IP: {client_ip} - Body: {body.decode('utf-8')}"
+            f"Invalid signature from IP: {client_ip} - Body: {body.decode('utf-8')}",
+            extra={"project": "ty_scrap"},
         )
         return JSONResponse(status_code=400, content={"error": "Invalid signature"})
 
@@ -61,6 +67,6 @@ async def callback(request: Request, x_line_signature: str = Header(None)):
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):
     handle_message, handle_result = handle_text_message(event, messaging_api)
-    logger.info(f"handle message : {handle_message}")
+    logger.info(f"handle message : {handle_message}", extra={"project": "ty_scrap"})
     if handle_result:
-        logger.info(handle_result)
+        logger.info(handle_result, extra={"project": "ty_scrap"})

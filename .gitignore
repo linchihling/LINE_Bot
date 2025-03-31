@@ -168,3 +168,5 @@ cython_debug/
 
 # pytest html
 report.html
+
+logstash.conf
