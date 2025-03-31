@@ -97,7 +97,7 @@ class NotifyRequest_message(BaseModel):
 
 
 @router.post("/notify/ty_scrap")
-@limiter.limit("3/3minute")
+@limiter.limit("10/3minute")
 async def push_message(request: Request, request_body: NotifyRequest_ty_scrap):
     logger.info(
         f"Received request: {await request.json()}", extra={"project": "ty_scrap"}
@@ -233,7 +233,7 @@ async def push_message_dust_detection(
     )
     text_message = request_body.message
     date_time = time.time()
-    image_url = f"https://linebot.tunghosteel.com:5003/water_spray?{date_time}"
+    image_url = f"https://linebot.tunghosteel.com:5003/dust_detection_150?{date_time}"
     try:
         # Push message to Line Group
         send_notification(
