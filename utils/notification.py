@@ -70,35 +70,6 @@ def send_ntfy_notification(
         raise Exception(str(e))
 
 
-def send_line_notify(
-    line_notify_token: str, text_message: str, image_url: Optional[str] = None
-) -> None:
-    """
-    Sends a notification to LINE Notify with optional image URL.
-
-    Args:
-        line_notify_token (str): LINE Notify authentication token
-        text_message (str): Message to be sent
-        image_url (str, optional): URL of image to be attached
-
-    """
-    notify_url = "https://notify-api.line.me/api/notify"
-    headers = {"Authorization": f"Bearer {line_notify_token}"}
-
-    message = text_message
-    if image_url:
-        message = f"{text_message}\n{image_url}"
-
-    data = {"message": message}
-
-    try:
-        response = requests.post(notify_url, headers=headers, data=data, timeout=10)
-        response.raise_for_status()
-
-    except requests.exceptions.RequestException as e:
-        raise Exception(str(e))
-
-
 def send_notification(project_name, send_func, *args):
     """Generic function to send a notification and handle exceptions."""
     try:

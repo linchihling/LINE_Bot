@@ -17,7 +17,6 @@ from slowapi.util import get_remote_address
 from utils.notification import (
     send_to_line_group,
     send_ntfy_notification,
-    send_line_notify,
     send_notification,
 )
 from utils.logger import setup_logger
@@ -121,11 +120,6 @@ async def push_message(request: Request, request_body: NotifyRequest_ty_scrap):
         # NTFY Notification
         send_notification(
             "ty_scrap", send_ntfy_notification, ntfy_ty_scrap, text_message, image_url
-        )
-
-        # LINE Notify
-        send_notification(
-            "ty_scrap", send_line_notify, line_notify_token, text_message, image_url
         )
 
         return {"status": "success", "message": "Notification sent successfully"}
