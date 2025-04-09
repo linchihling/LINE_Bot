@@ -35,11 +35,13 @@ group_id_push_ty = os.getenv("GROUP_ID_PUSHBOT_TY_SCRAP")
 group_id_ty_water_spray = os.getenv("GROUP_ID_PUSHBOT_TY_WATER_SPRAY")
 group_id_ty_spark_detection = os.getenv("GROUP_ID_PUSHBOT_TY_SPARK_DETECTION")
 group_id_ty_dust_detection = os.getenv("GROUP_ID_PUSHBOT_TY_DUST_DETECTION")
+group_id_ty_pose_detection = os.getenv("GROUP_ID_PUSHBOT_TY_POSE_DETECTION")
 line_notify_token = os.getenv("LINE_NOTIFY_TOKEN")
 ntfy_ty_scrap = os.getenv("NTFY_TY_SCRAP")
 ntfy_ty_water_spray = os.getenv("NTFY_TY_WATER_SPRAY")
 ntfy_ty_spark_detection = os.getenv("NTFY_TY_SPARK_DETECTION")
 ntfy_ty_dust_detection = os.getenv("NTFY_TY_DUST_DETECTION")
+ntfy_ty_pose_detection = os.getenv("NTFY_TY_POSE_DETECTION")
 
 # Limiter
 limiter = Limiter(key_func=get_remote_address)
@@ -69,8 +71,9 @@ async def callback(request: Request, x_line_signature: str = Header(None)):
         logger.warning(
             f"Invalid signature from IP: {client_ip}", extra={"project": "line"}
         )
+
         return JSONResponse(status_code=400, content={"error": "Invalid signature"})
-    # logger.info(f"Incoming request from IP: {client_ip} - Path: {request.url.path}")
+    print(f"Incoming request from IP: {client_ip} - Path: {request.url.path}")
     return {"message": "OK"}
 
 
@@ -253,5 +256,46 @@ async def push_message_dust_detection(
             f"Error in push_message: {str(e)}",
             exc_info=True,
             extra={"project": "dust_detection"},
+        )
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
+@router.post("/notify/pose_detection")
+@limiter.limit("10/3minute")
+async def push_message_pose_detection(
+    request: Request, request_body: NotifyRequest_message
+):
+
+    logger.info(
+        f"Received request: {await request.json()}", extra={"project": "pose_detection"}
+    )
+    text_message = request_body.message
+    date_time = time.time()
+    image_url = f"https://linebot.tunghosteel.com:5003/pose_detection?{date_time}"
+    try:
+        # Push message to Line Group
+        send_notification(
+            "pose_detection",
+            send_to_line_group,
+            messaging_api,
+            group_id_ty_pose_detection,
+            text_message,
+            image_url,
+        )
+        # NTFY Notification
+        send_notification(
+            "pose_detection",
+            send_ntfy_notification,
+            ntfy_ty_pose_detection,
+            text_message,
+            image_url,
+        )
+        return {"status": "success", "message": "Notification sent successfully"}
+
+    except Exception as e:
+        logger.error(
+            f"Error in push_message: {str(e)}",
+            exc_info=True,
+            extra={"project": "pose_detection"},
         )
         raise HTTPException(status_code=500, detail="Internal Server Error")
