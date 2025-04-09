@@ -73,7 +73,10 @@ async def callback(request: Request, x_line_signature: str = Header(None)):
         )
 
         return JSONResponse(status_code=400, content={"error": "Invalid signature"})
-    print(f"Incoming request from IP: {client_ip} - Path: {request.url.path}")
+    logger.debug(
+        f"Incoming request from IP: {client_ip} - Path: {request.url.path}",
+        extra={"project": "line"},
+    )
     return {"message": "OK"}
 
 
