@@ -97,6 +97,11 @@ class NotifyRequest_ty_scrap(BaseModel):
     image_path: str
 
 
+class NotifyRequest_water_scrap(BaseModel):
+    message: str
+    image_filename: str
+
+
 class NotifyRequest_message(BaseModel):
     message: str
 
@@ -142,15 +147,17 @@ async def push_message(request: Request, request_body: NotifyRequest_ty_scrap):
 @router.post("/notify/water_spray")
 @limiter.limit("10/3minute")
 async def push_message_water_spray(
-    request: Request, request_body: NotifyRequest_message
+    request: Request, request_body: NotifyRequest_water_scrap
 ):
 
     logger.info(
         f"Received request: {await request.json()}", extra={"project": "water_spray"}
     )
     text_message = request_body.message
-    date_time = time.time()
-    image_url = f"https://linebot.tunghosteel.com:5003/water_spray?{date_time}"
+    image_filename = request_body.image_filename
+    image_url = (
+        f"https://linebot.tunghosteel.com:5003/water_spray_files/{image_filename}"
+    )
     try:
         # Push message to Line Group
         send_notification(
