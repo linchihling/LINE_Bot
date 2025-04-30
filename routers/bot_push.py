@@ -91,24 +91,24 @@ def handle_message(event):
         )
 
 
-class NotifyRequest_ty_scrap(BaseModel):
+class ScrapNotificationRequest(BaseModel):
     rolling_line: str
     message: str
     image_path: str
 
 
-class NotifyRequest_water_scrap(BaseModel):
+class ImageNotificationRequest(BaseModel):
     message: str
     image_filename: str
 
 
-class NotifyRequest_message(BaseModel):
+class TextNotificationRequest(BaseModel):
     message: str
 
 
 @router.post("/notify/ty_scrap")
 @limiter.limit("10/3minute")
-async def push_message(request: Request, request_body: NotifyRequest_ty_scrap):
+async def push_message(request: Request, request_body: ScrapNotificationRequest):
     logger.info(
         f"Received request: {await request.json()}", extra={"project": "ty_scrap"}
     )
@@ -147,7 +147,7 @@ async def push_message(request: Request, request_body: NotifyRequest_ty_scrap):
 @router.post("/notify/water_spray")
 @limiter.limit("10/3minute")
 async def push_message_water_spray(
-    request: Request, request_body: NotifyRequest_water_scrap
+    request: Request, request_body: ImageNotificationRequest
 ):
 
     logger.info(
@@ -190,7 +190,7 @@ async def push_message_water_spray(
 @router.post("/notify/spark_detection")
 @limiter.limit("10/3minute")
 async def push_message_spark_detection(
-    request: Request, request_body: NotifyRequest_message
+    request: Request, request_body: ImageNotificationRequest
 ):
 
     logger.info(
@@ -198,8 +198,8 @@ async def push_message_spark_detection(
         extra={"project": "spark_detection"},
     )
     text_message = request_body.message
-    date_time = time.time()
-    image_url = f"https://linebot.tunghosteel.com:5003/spark_detection?{date_time}"
+    image_filename = request_body.image_filename
+    image_url = f"https://linebot.tunghosteel.com:5003/spark_detection/{image_filename}"
     try:
         # Push message to Line Group
         send_notification(
@@ -232,7 +232,7 @@ async def push_message_spark_detection(
 @router.post("/notify/dust_detection_150")
 @limiter.limit("10/3minute")
 async def push_message_dust_detection(
-    request: Request, request_body: NotifyRequest_message
+    request: Request, request_body: TextNotificationRequest
 ):
 
     logger.info(
@@ -273,7 +273,7 @@ async def push_message_dust_detection(
 @router.post("/notify/pose_detection")
 @limiter.limit("10/3minute")
 async def push_message_pose_detection(
-    request: Request, request_body: NotifyRequest_message
+    request: Request, request_body: TextNotificationRequest
 ):
 
     logger.info(
