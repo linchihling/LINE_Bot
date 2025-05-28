@@ -232,15 +232,17 @@ async def push_message_spark_detection(
 @router.post("/notify/dust_detection_150")
 @limiter.limit("10/3minute")
 async def push_message_dust_detection(
-    request: Request, request_body: TextNotificationRequest
+    request: Request, request_body: ImageNotificationRequest
 ):
 
     logger.info(
         f"Received request: {await request.json()}", extra={"project": "dust_detection"}
     )
     text_message = request_body.message
-    date_time = time.time()
-    image_url = f"https://linebot.tunghosteel.com:5003/dust_detection_150?{date_time}"
+    image_filename = request_body.image_filename
+    image_url = (
+        f"https://linebot.tunghosteel.com:5003/dust_detection_150/{image_filename}"
+    )
     try:
         # Push message to Line Group
         send_notification(
