@@ -144,6 +144,35 @@ async def push_message(request: Request, request_body: ScrapNotificationRequest)
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
+@router.post("/notify/ty_system_scrap")
+@limiter.limit("10/1minute")
+async def push_message_system(request: Request, request_body: TextNotificationRequest):
+    logger.info(
+        f"Received request: {await request.json()}",
+        extra={"project": "ty_system_scrap"},
+    )
+    text_message = request_body.message
+    try:
+        # Push message to Line Group
+        send_notification(
+            "ty_system_scrap",
+            send_to_line_group,
+            messaging_api,
+            group_id_push_ty,
+            text_message,
+        )
+
+        return {"status": "success", "message": "Notification sent successfully"}
+
+    except Exception as e:
+        logger.error(
+            f"Error in sent: {str(e)}",
+            exc_info=True,
+            extra={"project": "ty_system_scrap"},
+        )
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
 @router.post("/notify/water_spray")
 @limiter.limit("10/3minute")
 async def push_message_water_spray(
