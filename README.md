@@ -1,22 +1,16 @@
 # LINE Bot 專案
 
-這是一個基於 FastAPI 的 LINE Bot 專案，主要用於東和鋼鐵公司的生產監控和通知系統。專案包含兩個主要的 LINE Bot 功能：TY Scrap Bot 和 THS Bot，用於處理不同的業務需求。
+這是一個基於 FastAPI 的 LINE Bot 專案，包含兩個 LINE Bot：TY Scrap Bot 和 THS Bot，用於處理不同的業務需求。
 
 ## 🚀 功能特色
 
 ### TY Scrap Bot
-- **機器監控查詢**: 支援軋一、軋二機器的影像查詢
-- **互動式選單**: 提供日期、時間、影像清單的選擇介面
-- **即時影像檢視**: 可查看最新的生產影像
-- **Flex Message 支援**: 使用 LINE 的 Flex Message 提供豐富的互動體驗
+- **機器監控查詢**: 提供有加入此 LINE Bot 的使用者查詢影像
+- **互動式選單**: 透過 LINE 的 Flex Message 提供日期、時間、影像清單的互動介面，最後回傳使用者查詢的特定影像
+- **即時影像檢視**: 隨時查看最新的生產影像
 
-### THS Bot (Push Bot)
-- **多專案通知**: 支援多個監控專案的通知推送
-  - 鋼筋檢測 (ty_scrap)
-  - 噴水檢測 (water_spray)
-  - 火花檢測 (spark_detection)
-  - 粉塵檢測 (dust_detection)
-  - 姿勢檢測 (pose_detection)
+### THS Bot 
+- **多專案通知**: 支援多個專案的訊息發送
 - **雙重通知**: 同時發送 LINE 群組訊息和 NTFY 通知
 - **圖片支援**: 可附加圖片到通知訊息中
 
@@ -24,26 +18,26 @@
 
 ```
 LINE_Bot/
-├── main.py                 # FastAPI 應用程式入口
-├── requirements.txt        # Python 依賴套件
-├── Dockerfile             # Docker 映像檔配置
-├── docker-compose.yml     # Docker Compose 配置
-├── config/                # 配置檔案
-│   ├── config.yaml        # 主要配置
-│   └── logging.yaml       # 日誌配置
-├── routers/               # API 路由
-│   ├── ths_bot.py         # THS Bot 路由
-│   └── ty_scrap.py        # TY Scrap Bot 路由
-├── handlers/              # 業務邏輯處理器
-│   └── ty_scrap_handler.py # TY Scrap Bot 處理器
-├── utils/                 # 工具模組
-│   ├── factory.py         # 工廠模式工具
-│   ├── fetch_url.py       # URL 抓取工具
-│   └── notification.py    # 通知工具
-└── tests/                 # 測試檔案
-    ├── test_ths_bot.py    # THS Bot 測試
-    ├── test_ty_scrap.py   # TY Scrap Bot 測試
-    └── utils.py           # 測試工具
+├── main.py                 
+├── requirements.txt        
+├── Dockerfile             
+├── docker-compose.yml    
+├── config/                
+│   ├── config.yaml       
+│   └── logging.yaml      
+├── routers/               
+│   ├── ths_bot.py        
+│   └── ty_scrap.py        
+├── handlers/              
+│   └── ty_scrap_handler.py 
+├── utils/                
+│   ├── factory.py         
+│   ├── fetch_url.py      
+│   └── notification.py    
+└── tests/                 
+    ├── test_ths_bot.py    
+    ├── test_ty_scrap.py   
+    └── utils.py          
 ```
 
 ## 🛠️ 技術棧
@@ -68,35 +62,6 @@ LINE_Bot/
 ### 1. 環境變數設定
 
 建立 `.env` 檔案並設定以下環境變數：
-
-```env
-# LINE Bot 設定
-LINE_CHANNEL_ACCESS_TOKEN_TY_SCRAP=your_ty_scrap_access_token
-LINE_CHANNEL_SECRET_TY_SCRAP=your_ty_scrap_channel_secret
-WEBHOOKS_URL_TY_SCRAP=/webhooks/ty_scrap
-GROUP_ID_TY_SCRAP=your_ty_scrap_group_id
-
-LINE_CHANNEL_ACCESS_TOKEN_PUSHBOT=your_pushbot_access_token
-LINE_CHANNEL_SECRET_PUSHBOT=your_pushbot_channel_secret
-WEBHOOKS_URL_PUSHBOT=/webhooks/pushbot
-
-# 群組 ID 設定
-GROUP_ID_PUSHBOT_TY_SCRAP=your_ty_scrap_group_id
-GROUP_ID_PUSHBOT_TY_WATER_SPRAY=your_water_spray_group_id
-GROUP_ID_PUSHBOT_TY_SPARK_DETECTION=your_spark_detection_group_id
-GROUP_ID_PUSHBOT_TY_DUST_DETECTION=your_dust_detection_group_id
-GROUP_ID_PUSHBOT_TY_POSE_DETECTION=your_pose_detection_group_id
-
-# NTFY 主題設定
-NTFY_TY_SCRAP=your_ty_scrap_ntfy_topic
-NTFY_TY_WATER_SPRAY=your_water_spray_ntfy_topic
-NTFY_TY_SPARK_DETECTION=your_spark_detection_ntfy_topic
-NTFY_TY_DUST_DETECTION=your_dust_detection_ntfy_topic
-NTFY_TY_POSE_DETECTION=your_pose_detection_ntfy_topic
-
-# Logstash 設定
-LOGSTASH_INTERNAL_PASSWORD=your_logstash_password
-```
 
 ### 2. 使用 Docker Compose 啟動
 
@@ -127,12 +92,12 @@ uvicorn main:app --host 0.0.0.0 --port 6000 --reload
 - **POST** `/webhooks/pushbot/line` - LINE Bot webhook 端點
 
 ### 通知端點
-- **POST** `/webhooks/pushbot/notify/ty_scrap` - 鋼筋檢測通知
-- **POST** `/webhooks/pushbot/notify/ty_system_scrap` - 系統鋼筋檢測通知
-- **POST** `/webhooks/pushbot/notify/water_spray` - 噴水檢測通知
-- **POST** `/webhooks/pushbot/notify/spark_detection` - 火花檢測通知
-- **POST** `/webhooks/pushbot/notify/dust_detection_150` - 粉塵檢測通知
-- **POST** `/webhooks/pushbot/notify/pose_detection` - 姿勢檢測通知
+- **POST** `/webhooks/pushbot/notify/ty_scrap` 
+- **POST** `/webhooks/pushbot/notify/ty_system_scrap` 
+- **POST** `/webhooks/pushbot/notify/water_spray` 
+- **POST** `/webhooks/pushbot/notify/spark_detection`
+- **POST** `/webhooks/pushbot/notify/dust_detection_150` 
+- **POST** `/webhooks/pushbot/notify/pose_detection` 
 
 ## 🤖 Bot 使用方式
 
@@ -150,7 +115,7 @@ uvicorn main:app --host 0.0.0.0 --port 6000 --reload
 ```json
 {
   "rolling_line": "1",
-  "message": "檢測到異常",
+  "message": "系統異常通知訊息",
   "image_path": "20241023_10/test.png"
 }
 ```
@@ -158,7 +123,7 @@ uvicorn main:app --host 0.0.0.0 --port 6000 --reload
 #### 圖片通知
 ```json
 {
-  "message": "檢測到異常",
+  "message": "系統異常通知訊息",
   "image_filename": "test.png"
 }
 ```
@@ -166,7 +131,7 @@ uvicorn main:app --host 0.0.0.0 --port 6000 --reload
 #### 文字通知
 ```json
 {
-  "message": "系統通知訊息"
+  "message": "系統異常通知訊息"
 }
 ```
 
@@ -208,28 +173,5 @@ pytest --html=report.html
 4. 配置 SSL 憑證
 5. 設定監控和警報
 
-### 健康檢查
 
-應用程式會在以下端點提供健康檢查：
-- `GET /docs` - API 文件
-- `GET /openapi.json` - OpenAPI 規格
-
-## 🤝 貢獻
-
-1. Fork 專案
-2. 建立功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交變更 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 開啟 Pull Request
-
-## 📄 授權
-
-此專案為東和鋼鐵公司內部專案，請遵循公司相關政策。
-
-## 📞 支援
-
-如有問題或需要支援，請聯繫開發團隊或建立 Issue。
-
----
-
-**注意**: 請確保在部署前正確設定所有環境變數，並測試所有功能。
+**注意**: 此專案為東和鋼鐵公司內部專案，部分重要資訊已移除，僅供參閱。
