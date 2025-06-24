@@ -4,7 +4,9 @@ import hmac
 
 
 def generate_signature(secret: str, body: str) -> str:
-    """產生LINE webhook所需的X-Line-Signature"""
+    """
+    產生X-Line-Signature給LINE webhook
+    """
     hash = hmac.new(
         secret.encode("utf-8"), body.encode("utf-8"), hashlib.sha256
     ).digest()

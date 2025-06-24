@@ -7,7 +7,9 @@ CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET_TY_SCRAP")
 
 
 def test_callback_valid_signature(client):
-    """正常情況 - 簽名正確"""
+    """
+    確認正常情況下簽名正確
+    """
     body_str = '{"events":[],"destination":"U000000000000000000000003d9"}'
     signature = generate_signature(CHANNEL_SECRET, body_str)
 
@@ -21,7 +23,9 @@ def test_callback_valid_signature(client):
 
 
 def test_callback_invalid_signature(client):
-    """異常情況 - 簽名錯誤"""
+    """
+    異常情況下簽名錯誤
+    """
     body_str = '{"events":[],"destination":"U000000000000000000000003d9"}'
     signature = "invalid_signature"
 

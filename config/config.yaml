@@ -1,3 +1,17 @@
 LOGSTASH:
   HOST: "logstash"
   PORT: 50000
+
+MACHINES:
+  軋一:
+    machine: "rl1"
+    url: ""
+    name_image: ":"
+    name_search: ":"
+    name_time: ""
+  軋二:
+    machine: "rl2"
+    url: ""
+    name_image: ""
+    name_search: ""
+    name_time: ""

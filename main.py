@@ -2,14 +2,14 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
-from routers import bot_push, ty_scrap
-from utils.logger import setup_logger
+from routers import ths_bot, ty_scrap
+from utils.factory import setup_logger
 
 logger = setup_logger(__name__)
 app = FastAPI()
 
 app.include_router(ty_scrap.router)
-app.include_router(bot_push.router)
+app.include_router(ths_bot.router)
 
 
 # 422 Request Validation Error

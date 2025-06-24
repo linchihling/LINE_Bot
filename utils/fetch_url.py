@@ -1,95 +1,96 @@
 import requests
 from bs4 import BeautifulSoup
-from typing import List
+from typing import List, Optional
 
-from utils.logger import setup_logger
+from utils.factory import setup_logger
 
 logger = setup_logger(__name__)
-HTML_PARSER = "html.parser"
-PNG_EXTENSION = ".png"
+
+_HTML_PARSER = "html.parser"
+_PNG_EXTENSION = ".png"
 
 
-def fetch_html_soup(url: str) -> BeautifulSoup:
-    """
-    發送請求並返回解析後的 BeautifulSoup 對象。
-    """
+def _fetch_html_soup(url: str) -> Optional[BeautifulSoup]:
     try:
         response = requests.get(url, timeout=10)
         response.raise_for_status()
-        return BeautifulSoup(response.text, HTML_PARSER)
-    except requests.RequestException as e:
-        logger.error(f"Failed to fetch {url}: {e}", extra={"project": "fetch_folder"})
+        return BeautifulSoup(response.text, _HTML_PARSER)
+    except requests.RequestException as exc:
+        logger.error(f"Failed to fetch {url}: {exc}", extra={"project": "fetch_folder"})
         return None
 
 
 def fetch_last_5_images(machine: str) -> List[str]:
     """
-    從軋一/軋二電腦擷取最新 5 張影像的路徑名稱
-    例如:latest_5_images[0] = "20241023_10/2024-10-23_10_01_21_63_900_D25.png"
+    Retrieves the latest 5 image_paths from the machine
+    Example: "20241023_10/2024-10-23_10_01_21_63_900_D25.png"
     """
-    if machine == "rl1":
-        url = "https://rebar-detection-sec1-ty.tunghosteel.com/get_last_5_images"
-    elif machine == "rl2":
-        url = "https://rebar-detection-sec2-ty.tunghosteel.com/get_last_5_images"
-    else:
+    endpoint_map = {
+        "rl1": "https://rebar-detection-sec1-ty.tunghosteel.com/get_last_5_images",
+        "rl2": "https://rebar-detection-sec2-ty.tunghosteel.com/get_last_5_images",
+    }
+
+    url = endpoint_map.get(machine)
+    if not url:
+        logger.warning(
+            f"Unknown machine identifier: {machine}", extra={"project": "fetch_folder"}
+        )
         return []
-    response = requests.get(url, timeout=10).json()
 
-    latest_5_images = [path.get("path").lstrip("/static/images/") for path in response]
-    logger.info(
-        f"{machine} successfully fetched the latest 5 images: {latest_5_images}",
-        extra={"project": "fetch_folder"},
-    )
-
-    return latest_5_images
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        latest_5_images = [
+            item.get("path", "").lstrip("/static/images/") for item in data
+        ]
+        logger.info(
+            f"{machine} fetched latest 5 images: {latest_5_images}",
+            extra={"project": "fetch_folder"},
+        )
+        return latest_5_images
+    except requests.RequestException as exc:
+        logger.error(
+            f"Failed to fetch images from {url}: {exc}",
+            extra={"project": "fetch_folder"},
+        )
+        return []
 
 
 def fetch_folder_links(url: str) -> List[str]:
-    """
-    獲取給定 URL 中的所有資料夾鏈接。
-    """
-    soup = fetch_html_soup(url)
+    soup = _fetch_html_soup(url)
     if soup is None:
         logger.warning(
             "Failed to retrieve HTML content.", extra={"project": "fetch_folder"}
         )
         return []
 
-    folder_links = [
+    return [
         link.get("href")
         for link in soup.find_all("a")
-        if link.get("href").endswith("/")
+        if link.get("href", "").endswith("/")
     ]
-    return folder_links
 
 
 def fetch_image_names(url: str) -> List[str]:
-    """
-    獲取給定 URL 中的所有圖片鏈接。
-    """
-    soup = fetch_html_soup(url)
+    soup = _fetch_html_soup(url)
     if soup is None:
         logger.warning(
             "Failed to retrieve HTML content.", extra={"project": "fetch_image"}
         )
         return []
 
-    image_names = [link.get("href") for link in soup.find_all("a") if link.get("href")]
-    return image_names
+    return [link.get("href") for link in soup.find_all("a") if link.get("href")]
 
 
 def fetch_latest_png_images(directory_url: str, max_images: int = 6) -> List[str]:
-    """
-    獲取給定資料夾 URL 中最新的 PNG 圖片鏈接。
-    """
-    soup = fetch_html_soup(directory_url)
+    soup = _fetch_html_soup(directory_url)
     if soup is None:
         return []
 
     png_links = [
         link.get("href")
         for link in soup.find_all("a")
-        if link.get("href").endswith(PNG_EXTENSION)
+        if link.get("href", "").endswith(_PNG_EXTENSION)
     ]
-    latest_png_links = png_links[-max_images:]
-    return [directory_url + img for img in latest_png_links]
+    return [directory_url + img for img in png_links[-max_images:]]

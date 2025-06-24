@@ -24,7 +24,7 @@ def test_callback(client):
 def test_push_message_success(client):
     payload = {"rolling_line": "1", "message": "Test Message", "image_path": "test.png"}
 
-    with patch("routers.bot_push.send_notification") as mock_send:
+    with patch("routers.ths_bot.send_notification") as mock_send:
         mock_send.return_value = None
         response = client.post(f"{WEBHOOKS_URL}/notify/ty_scrap", json=payload)
 
