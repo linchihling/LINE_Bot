@@ -2,7 +2,7 @@
 
 這是一個基於 FastAPI 的 LINE Bot 專案，包含兩個 LINE Bot：TY Scrap Bot 和 THS Bot，用於處理不同的業務需求。
 
-## 🚀 功能特色
+## 功能特色
 
 ### TY Scrap Bot
 - **機器監控查詢**: 提供有加入此 LINE Bot 的使用者查詢影像
@@ -14,7 +14,7 @@
 - **雙重通知**: 同時發送 LINE 群組訊息和 NTFY 通知
 - **圖片支援**: 可附加圖片到通知訊息中
 
-## 🏗️ 專案架構
+## 專案架構
 
 ```
 LINE_Bot/
@@ -40,7 +40,7 @@ LINE_Bot/
     └── utils.py          
 ```
 
-## 🛠️ 技術棧
+## 技術棧
 
 - **後端框架**: FastAPI
 - **LINE Bot SDK**: line-bot-sdk v3.11.0
@@ -51,13 +51,13 @@ LINE_Bot/
 - **測試框架**: pytest
 - **速率限制**: slowapi
 
-## 📋 環境需求
+## 環境需求
 
 - Python 3.12+
 - Docker & Docker Compose
 - LINE Bot Channel (需要 Channel Access Token 和 Channel Secret)
 
-## 🔧 安裝與設定
+## 安裝與設定
 
 ### 1. 環境變數設定
 
@@ -83,7 +83,7 @@ pip install -r requirements.txt
 uvicorn main:app --host 0.0.0.0 --port 6000 --reload
 ```
 
-## 📡 API 端點
+## API 端點
 
 ### TY Scrap Bot Webhook
 - **POST** `/webhooks/ty_scrap/line` - LINE Bot webhook 端點
@@ -99,7 +99,7 @@ uvicorn main:app --host 0.0.0.0 --port 6000 --reload
 - **POST** `/webhooks/pushbot/notify/dust_detection_150` 
 - **POST** `/webhooks/pushbot/notify/pose_detection` 
 
-## 🤖 Bot 使用方式
+## Bot 使用方式
 
 ### TY Scrap Bot 指令
 
@@ -135,7 +135,7 @@ uvicorn main:app --host 0.0.0.0 --port 6000 --reload
 }
 ```
 
-## 🧪 測試
+## 測試
 
 執行測試：
 
@@ -151,19 +151,19 @@ pytest tests/test_ty_scrap.py
 pytest --html=report.html
 ```
 
-## 📊 監控與日誌
+## 監控與日誌
 
-- **日誌系統**: 使用 Logstash 進行日誌收集和分析
+- **日誌系統**: 使用 Logstash 進行日誌收集和分析，紀錄於Elasticsearch
 - **速率限制**: 所有 API 端點都有速率限制保護
 - **錯誤處理**: 完整的錯誤處理和日誌記錄
 
-## 🔒 安全性
+## 安全性
 
 - **簽名驗證**: 所有 LINE webhook 都經過簽名驗證
 - **速率限制**: 防止 API 濫用
 - **環境變數**: 敏感資訊使用環境變數管理
 
-## 🚀 部署
+## 部署
 
 ### 生產環境部署
 
